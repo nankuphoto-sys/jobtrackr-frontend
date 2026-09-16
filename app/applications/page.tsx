@@ -86,7 +86,22 @@ export default function ApplicationsPage() {
           </div>
         </div>
 
-        {loading && <p className="mt-6 text-sm text-gray-500">Cargando...</p>}
+        {loading && (
+          <ul className="mt-6 space-y-3">
+            {[...Array(3)].map((_, i) => (
+              <li key={i} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm animate-pulse">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="space-y-2 flex-1">
+                    <div className="h-4 w-1/3 bg-gray-200 rounded" />
+                    <div className="h-3 w-1/4 bg-gray-100 rounded" />
+                  </div>
+                  <div className="h-4 w-12 bg-gray-100 rounded" />
+                </div>
+                <div className="mt-4 h-5 w-24 bg-gray-100 rounded-full" />
+              </li>
+            ))}
+          </ul>
+        )}
 
         {error && (
           <p className="mt-6 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2">
