@@ -2,6 +2,19 @@
 
 Next.js 16 (App Router) + TypeScript + Tailwind CSS para JobTrackr. Plan completo del proyecto: [`PLAN.md`](./PLAN.md).
 
+**Demo en vivo:** https://jobtrackr-frontend-two.vercel.app
+(backend en Render, free tier — la primera visita después de un rato inactivo puede tardar ~30-50s en despertar)
+
+![Tablero Kanban de JobTrackr](docs/screenshots/readme-kanban.png)
+
+<details>
+<summary>Más capturas (inicio, mobile)</summary>
+
+![Página de inicio](docs/screenshots/readme-home.png)
+![Vista mobile del tablero](docs/screenshots/readme-mobile.png)
+
+</details>
+
 ## Setup
 
 1. `npm install`
@@ -13,6 +26,10 @@ Next.js 16 (App Router) + TypeScript + Tailwind CSS para JobTrackr. Plan complet
 - `npm test` — tests unitarios (Vitest) de `lib/api.ts` y `lib/auth.ts`. No requieren nada corriendo.
 - `npm run test:e2e` — tests end-to-end (Playwright) contra la app real: registro, login, CRUD de postulaciones, expiración de token. **Requiere el backend corriendo** (`jobtrackr-backend`, `npm run dev`, puerto 4000) — si no está disponible, falla con un mensaje claro en vez de errores crípticos. Usa el Chrome instalado en el sistema (`channel: 'chrome'`), no descarga su propio binario.
 
+## Deploy
+
+Desplegado en **Vercel** (`vercel deploy --prod`), conectado al repo de GitHub para auto-deploy en cada push a `main`. Variable de entorno en producción: `NEXT_PUBLIC_API_URL` apuntando al backend en Render.
+
 ## Estado
 
 **Fase 0 (setup) completada:** Next.js + TypeScript + Tailwind configurados, página de inicio placeholder.
@@ -22,3 +39,5 @@ Next.js 16 (App Router) + TypeScript + Tailwind CSS para JobTrackr. Plan complet
 **Fase 3 completada:** `/applications` es ahora un tablero Kanban (`@dnd-kit/core`) con una columna por estado, drag & drop que actualiza el estado vía `PUT /applications/:id`, barra de métricas (total, conteo por estado, postulaciones de la semana, tasa de respuesta) y columnas swipeables en mobile (scroll horizontal con snap).
 
 **Fase 4 completada:** el drag & drop se puede operar 100% por teclado (Tab → Space → flechas → Space, con anuncios en español para lectores de pantalla); un error al cambiar de estado o borrar ya no oculta el tablero completo (bug real que se corrigió); carga inicial fallida tiene botón "Reintentar"; contraste de color auditado con WCAG real; QA mobile en las 6 pantallas.
+
+**Fase 5 completada:** deploy real en Vercel (frontend) + Render (backend, free tier), variables de entorno de producción separadas de desarrollo (`JWT_SECRET` propio, `FRONTEND_URL` restringiendo CORS al dominio real en vez de aceptar cualquier origen), flujo completo (registro → tablero → CRUD) verificado contra la app en producción real, no solo en local.
