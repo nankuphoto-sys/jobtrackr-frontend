@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { api, ApiError } from '@/lib/api';
 import { getToken, clearToken } from '@/lib/auth';
-import { JobApplication, STATUS_LABELS } from '@/lib/types';
+import { APPLICATION_STATUSES, ApplicationStatus, JobApplication, STATUS_LABELS } from '@/lib/types';
 
 const STATUS_STYLES: Record<string, string> = {
   POR_APLICAR: 'bg-gray-100 text-gray-700',
@@ -37,6 +37,32 @@ export default function ApplicationsPage() {
   function handleLogout() {
     clearToken();
     router.push('/login');
+  }
+
+  async function handleStatusChange(id: string, status: ApplicationStatus) {
+    const previous = applications;
+    setApplications((apps) => apps.map((a) => (a.id === id ? { ...a, status } : a)));
+
+    try {
+      await api.put<JobApplication>(`/applications/${id}`, { status });
+    } catch (err) {
+      setApplications(previous);
+      setError(err instanceof ApiError ? err.message : 'No se pudo actualizar el estado');
+    }
+  }
+
+  async function handleDelete(id: string) {
+    if (!window.confirm('¿Borrar esta postulación? Esta acción no se puede deshacer.')) return;
+
+    const previous = applications;
+    setApplications((apps) => apps.filter((a) => a.id !== id));
+
+    try {
+      await api.delete(`/applications/${id}`);
+    } catch (err) {
+      setApplications(previous);
+      setError(err instanceof ApiError ? err.message : 'No se pudo borrar la postulación');
+    }
   }
 
   return (
@@ -82,9 +108,12 @@ export default function ApplicationsPage() {
                   <p className="font-semibold text-gray-900">{app.company}</p>
                   <p className="text-sm text-gray-600">{app.role}</p>
                 </div>
-                <span className={`text-xs font-medium px-2 py-1 rounded-full whitespace-nowrap ${STATUS_STYLES[app.status]}`}>
-                  {STATUS_LABELS[app.status]}
-                </span>
+                <button
+                  onClick={() => handleDelete(app.id)}
+                  className="text-sm text-red-500 hover:text-red-700 hover:underline whitespace-nowrap"
+                >
+                  Borrar
+                </button>
               </div>
               {app.link && (
                 <a
@@ -97,6 +126,18 @@ export default function ApplicationsPage() {
                 </a>
               )}
               {app.notes && <p className="mt-2 text-sm text-gray-500">{app.notes}</p>}
+
+              <select
+                value={app.status}
+                onChange={(e) => handleStatusChange(app.id, e.target.value as ApplicationStatus)}
+                className={`mt-3 text-xs font-medium rounded-full px-2 py-1 border-0 focus:outline-none focus:ring-2 focus:ring-blue-500 ${STATUS_STYLES[app.status]}`}
+              >
+                {APPLICATION_STATUSES.map((s) => (
+                  <option key={s} value={s}>
+                    {STATUS_LABELS[s]}
+                  </option>
+                ))}
+              </select>
             </li>
           ))}
         </ul>
