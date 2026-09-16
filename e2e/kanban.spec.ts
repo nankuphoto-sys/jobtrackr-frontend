@@ -1,5 +1,5 @@
 import { test, expect, APIRequestContext } from '@playwright/test';
-import { registerTestUser, loginAs, API_URL } from './helpers';
+import { registerTestUser, loginAs, dragCardToColumn, API_URL } from './helpers';
 
 async function seedApplication(
   request: APIRequestContext,
@@ -39,24 +39,54 @@ test('arrastrar una tarjeta a la columna vecina actualiza su estado', async ({ p
   // al lado alcanza para probar el mecanismo sin pelear con el auto-scroll.
   const targetColumn = page.locator('[data-testid="column-ENTREVISTA"]');
 
-  await card.hover();
-  await page.mouse.down();
-  const targetBox = await targetColumn.boundingBox();
-  if (!targetBox) throw new Error('No se encontró la columna destino');
-  const targetX = targetBox.x + targetBox.width / 2;
-  const targetY = targetBox.y + 80;
-  // dnd-kit necesita al menos dos eventos pointermove para recalcular qué
-  // droppable está "debajo" antes del drop; un solo salto grande no alcanza.
-  await page.mouse.move(targetX, targetY, { steps: 15 });
-  await page.mouse.move(targetX, targetY, { steps: 5 });
-  await page.mouse.up();
+  await dragCardToColumn(page, card, targetColumn);
 
   await expect(page.locator('[data-testid="column-ENTREVISTA"]').getByText('Initech')).toBeVisible();
 
-  const apps = await request
-    .get(`${API_URL}/applications`, { headers: { Authorization: `Bearer ${token}` } })
-    .then((r) => r.json());
-  expect(apps.find((a: { company: string }) => a.company === 'Initech')?.status).toBe('ENTREVISTA');
+  // El PUT que persiste el cambio sigue en vuelo cuando la UI ya se actualizó
+  // (optimista); poll en vez de asumir que ya terminó.
+  await expect
+    .poll(async () => {
+      const apps = await request
+        .get(`${API_URL}/applications`, { headers: { Authorization: `Bearer ${token}` } })
+        .then((r) => r.json());
+      return apps.find((a: { company: string }) => a.company === 'Initech')?.status;
+    })
+    .toBe('ENTREVISTA');
+});
+
+test('el drag por teclado mueve la tarjeta a la columna vecina con una sola flecha', async ({ page, request }) => {
+  const { token } = await registerTestUser(request, 'e2e-kanban-keyboard');
+  await seedApplication(request, token, { company: 'Initech', role: 'QA Engineer', status: 'APLICADO' });
+
+  await loginAs(page, token);
+  await page.goto('/applications');
+
+  // Tab hasta enfocar la tarjeta (role="button" que provee useDraggable).
+  const card = page.locator('[data-testid="column-APLICADO"] [role="button"]', { hasText: 'Initech' });
+  await card.focus();
+  await expect(card).toBeFocused();
+
+  // dnd-kit recalcula colisiones en un frame aparte (igual que con el mouse,
+  // donde hacían falta dos `mouse.move`); sin una pausa chica acá, el Space
+  // final puede soltar antes de que el estado interno registre la columna
+  // nueva.
+  await page.keyboard.press('Space'); // levantar
+  await page.waitForTimeout(150);
+  await page.keyboard.press('ArrowRight'); // saltar a la columna vecina (Entrevista)
+  await page.waitForTimeout(150);
+  await page.keyboard.press('Space'); // soltar
+
+  await expect(page.locator('[data-testid="column-ENTREVISTA"]').getByText('Initech')).toBeVisible();
+
+  await expect
+    .poll(async () => {
+      const apps = await request
+        .get(`${API_URL}/applications`, { headers: { Authorization: `Bearer ${token}` } })
+        .then((r) => r.json());
+      return apps.find((a: { company: string }) => a.company === 'Initech')?.status;
+    })
+    .toBe('ENTREVISTA');
 });
 
 test('las métricas de arriba reflejan los conteos y la tasa de respuesta', async ({ page, request }) => {
