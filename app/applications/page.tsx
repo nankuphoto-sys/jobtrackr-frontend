@@ -3,23 +3,34 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import {
+  DndContext,
+  DragEndEvent,
+  DragOverlay,
+  DragStartEvent,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
 import { api, ApiError } from '@/lib/api';
 import { getToken, clearToken } from '@/lib/auth';
-import { APPLICATION_STATUSES, ApplicationStatus, JobApplication, STATUS_LABELS } from '@/lib/types';
-
-const STATUS_STYLES: Record<string, string> = {
-  POR_APLICAR: 'bg-gray-100 text-gray-700',
-  APLICADO: 'bg-blue-100 text-blue-700',
-  ENTREVISTA: 'bg-amber-100 text-amber-700',
-  OFERTA: 'bg-green-100 text-green-700',
-  RECHAZADO: 'bg-red-100 text-red-700',
-};
+import { APPLICATION_STATUSES, ApplicationStatus, JobApplication } from '@/lib/types';
+import { CardContent } from '@/components/KanbanCard';
+import { KanbanColumn } from '@/components/KanbanColumn';
+import { StatsBar } from '@/components/StatsBar';
 
 export default function ApplicationsPage() {
   const router = useRouter();
   const [applications, setApplications] = useState<JobApplication[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [activeApp, setActiveApp] = useState<JobApplication | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor)
+  );
 
   useEffect(() => {
     if (!getToken()) {
@@ -65,9 +76,25 @@ export default function ApplicationsPage() {
     }
   }
 
+  function handleDragStart(event: DragStartEvent) {
+    setActiveApp(applications.find((a) => a.id === event.active.id) ?? null);
+  }
+
+  function handleDragEnd(event: DragEndEvent) {
+    setActiveApp(null);
+    const { active, over } = event;
+    if (!over) return;
+
+    const newStatus = over.id as ApplicationStatus;
+    const app = applications.find((a) => a.id === active.id);
+    if (!app || app.status === newStatus) return;
+
+    handleStatusChange(app.id, newStatus);
+  }
+
   return (
     <main className="min-h-screen p-4 sm:p-6">
-      <div className="max-w-3xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <h1 className="text-2xl font-bold text-gray-900">Mis postulaciones</h1>
           <div className="flex gap-2">
@@ -87,20 +114,17 @@ export default function ApplicationsPage() {
         </div>
 
         {loading && (
-          <ul className="mt-6 space-y-3">
-            {[...Array(3)].map((_, i) => (
-              <li key={i} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm animate-pulse">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="space-y-2 flex-1">
-                    <div className="h-4 w-1/3 bg-gray-200 rounded" />
-                    <div className="h-3 w-1/4 bg-gray-100 rounded" />
-                  </div>
-                  <div className="h-4 w-12 bg-gray-100 rounded" />
+          <div className="mt-6 flex gap-4 overflow-x-auto pb-2">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="w-72 flex-shrink-0 animate-pulse">
+                <div className="h-9 bg-gray-100 rounded-t-lg" />
+                <div className="min-h-[160px] p-2 space-y-2 rounded-b-lg border border-t-0 border-gray-200 bg-gray-50">
+                  <div className="h-16 bg-white border border-gray-200 rounded-lg" />
+                  <div className="h-16 bg-white border border-gray-200 rounded-lg" />
                 </div>
-                <div className="mt-4 h-5 w-24 bg-gray-100 rounded-full" />
-              </li>
+              </div>
             ))}
-          </ul>
+          </div>
         )}
 
         {error && (
@@ -115,55 +139,34 @@ export default function ApplicationsPage() {
           </p>
         )}
 
-        <ul className="mt-6 space-y-3">
-          {applications.map((app) => (
-            <li key={app.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="font-semibold text-gray-900">{app.company}</p>
-                  <p className="text-sm text-gray-600">{app.role}</p>
-                </div>
-                <div className="flex gap-3 whitespace-nowrap">
-                  <Link
-                    href={`/applications/${app.id}/edit`}
-                    className="text-sm text-gray-500 hover:text-gray-700 hover:underline"
-                  >
-                    Editar
-                  </Link>
-                  <button
-                    onClick={() => handleDelete(app.id)}
-                    className="text-sm text-red-500 hover:text-red-700 hover:underline"
-                  >
-                    Borrar
-                  </button>
-                </div>
-              </div>
-              {app.link && (
-                <a
-                  href={app.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-2 inline-block text-sm text-blue-600 hover:underline break-all"
-                >
-                  {app.link}
-                </a>
-              )}
-              {app.notes && <p className="mt-2 text-sm text-gray-500">{app.notes}</p>}
+        {!loading && !error && applications.length > 0 && (
+          <>
+            <div className="mt-6">
+              <StatsBar applications={applications} />
+            </div>
 
-              <select
-                value={app.status}
-                onChange={(e) => handleStatusChange(app.id, e.target.value as ApplicationStatus)}
-                className={`mt-3 text-xs font-medium rounded-full px-2 py-1 border-0 focus:outline-none focus:ring-2 focus:ring-blue-500 ${STATUS_STYLES[app.status]}`}
-              >
-                {APPLICATION_STATUSES.map((s) => (
-                  <option key={s} value={s}>
-                    {STATUS_LABELS[s]}
-                  </option>
+            <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+              <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory -mx-4 px-4 sm:mx-0 sm:px-0">
+                {APPLICATION_STATUSES.map((status) => (
+                  <KanbanColumn
+                    key={status}
+                    status={status}
+                    applications={applications.filter((a) => a.status === status)}
+                    onDelete={handleDelete}
+                  />
                 ))}
-              </select>
-            </li>
-          ))}
-        </ul>
+              </div>
+
+              <DragOverlay>
+                {activeApp && (
+                  <div className="w-72 bg-white border border-gray-300 rounded-lg p-3 shadow-lg rotate-2">
+                    <CardContent app={activeApp} />
+                  </div>
+                )}
+              </DragOverlay>
+            </DndContext>
+          </>
+        )}
       </div>
     </main>
   );

@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { registerTestUser, loginAs } from './helpers';
 
-test('crear, editar el estado y borrar una postulación', async ({ page, request }) => {
+test('crear y borrar una postulación', async ({ page, request }) => {
   const { token } = await registerTestUser(request, 'e2e-crud');
   await loginAs(page, token);
 
@@ -17,9 +17,6 @@ test('crear, editar el estado y borrar una postulación', async ({ page, request
   await expect(page).toHaveURL(/\/applications$/);
   await expect(page.getByText('Acme Corp')).toBeVisible();
   await expect(page.getByText('Backend Developer')).toBeVisible();
-
-  await page.locator('select').first().selectOption('ENTREVISTA');
-  await expect(page.locator('select').first()).toHaveValue('ENTREVISTA');
 
   page.on('dialog', (d) => d.accept());
   await page.getByRole('button', { name: 'Borrar' }).click();
