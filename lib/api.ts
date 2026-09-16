@@ -1,4 +1,4 @@
-import { getToken } from './auth';
+import { getToken, clearToken } from './auth';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 
@@ -27,6 +27,16 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 
   if (!res.ok) {
     const message = (data && typeof data.error === 'string') ? data.error : 'Error inesperado';
+
+    // Un 401 en una ruta que no sea /auth/* significa que el token guardado
+    // expiró o dejó de ser válido (no una contraseña incorrecta en login).
+    if (res.status === 401 && !path.startsWith('/auth') && typeof window !== 'undefined') {
+      clearToken();
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
+    }
+
     throw new ApiError(res.status, message);
   }
 
