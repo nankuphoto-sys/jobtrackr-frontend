@@ -108,12 +108,20 @@ export default function ApplicationsPage() {
                   <p className="font-semibold text-gray-900">{app.company}</p>
                   <p className="text-sm text-gray-600">{app.role}</p>
                 </div>
-                <button
-                  onClick={() => handleDelete(app.id)}
-                  className="text-sm text-red-500 hover:text-red-700 hover:underline whitespace-nowrap"
-                >
-                  Borrar
-                </button>
+                <div className="flex gap-3 whitespace-nowrap">
+                  <Link
+                    href={`/applications/${app.id}/edit`}
+                    className="text-sm text-gray-500 hover:text-gray-700 hover:underline"
+                  >
+                    Editar
+                  </Link>
+                  <button
+                    onClick={() => handleDelete(app.id)}
+                    className="text-sm text-red-500 hover:text-red-700 hover:underline"
+                  >
+                    Borrar
+                  </button>
+                </div>
               </div>
               {app.link && (
                 <a
