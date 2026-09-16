@@ -12,4 +12,4 @@ Next.js 14 (App Router) + TypeScript + Tailwind CSS para JobTrackr. Plan complet
 
 **Fase 0 (setup) completada:** Next.js + TypeScript + Tailwind configurados, página de inicio placeholder.
 
-**Fase 2 (pendiente):** layout responsive real y consumo de la API del backend (Fase 1 primero, del lado del backend).
+**Fase 2 completada:** cliente API centralizado (`lib/api.ts`) con manejo de JWT vía `localStorage`, páginas de registro/login, página protegida `/applications` (lista, cambia estado, borra) y `/applications/new` (crear). Next.js actualizado a 16.3.5 por vulnerabilidad de seguridad.
