@@ -28,7 +28,7 @@ Next.js 16 (App Router) + TypeScript + Tailwind CSS para JobTrackr. Plan complet
 
 ## Deploy
 
-Desplegado en **Vercel** (`vercel deploy --prod`), conectado al repo de GitHub para auto-deploy en cada push a `main`. Variable de entorno en producción: `NEXT_PUBLIC_API_URL` apuntando al backend en Render.
+Desplegado en **Vercel** (`vercel deploy --prod`), conectado al repo de GitHub para auto-deploy en cada push a `main`. Variables de entorno en producción: `NEXT_PUBLIC_API_URL` (backend en Render) y `NEXT_PUBLIC_SENTRY_DSN` (monitoreo de errores).
 
 ## Estado
 
@@ -41,3 +41,5 @@ Desplegado en **Vercel** (`vercel deploy --prod`), conectado al repo de GitHub p
 **Fase 4 completada:** el drag & drop se puede operar 100% por teclado (Tab → Space → flechas → Space, con anuncios en español para lectores de pantalla); un error al cambiar de estado o borrar ya no oculta el tablero completo (bug real que se corrigió); carga inicial fallida tiene botón "Reintentar"; contraste de color auditado con WCAG real; QA mobile en las 6 pantallas.
 
 **Fase 5 completada:** deploy real en Vercel (frontend) + Render (backend, free tier), variables de entorno de producción separadas de desarrollo (`JWT_SECRET` propio, `FRONTEND_URL` restringiendo CORS al dominio real en vez de aceptar cualquier origen), flujo completo (registro → tablero → CRUD) verificado contra la app en producción real, no solo en local.
+
+**Pulido post-Fase 5:** tests de integración del backend (ver su README), `@types/react`/`@types/react-dom` alineados con React 19, y monitoreo de errores en producción con **Sentry** — verificado con tráfico de red real, no solo que compile.
