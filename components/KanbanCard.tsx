@@ -48,7 +48,7 @@ export function KanbanCard({ app, onDelete }: { app: JobApplication; onDelete: (
         <Link href={`/applications/${app.id}/edit`} className="text-gray-500 hover:text-gray-700 hover:underline">
           Editar
         </Link>
-        <button onClick={() => onDelete(app.id)} className="text-red-500 hover:text-red-700 hover:underline">
+        <button onClick={() => onDelete(app.id)} className="text-red-600 hover:text-red-700 hover:underline">
           Borrar
         </button>
       </div>

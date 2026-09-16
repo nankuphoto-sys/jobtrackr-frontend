@@ -40,7 +40,7 @@ export function KanbanColumn({
           <KanbanCard key={app.id} app={app} onDelete={onDelete} />
         ))}
         {applications.length === 0 && (
-          <p className="text-xs text-gray-400 text-center py-6">Sin postulaciones</p>
+          <p className="text-xs text-gray-500 text-center py-6">Sin postulaciones</p>
         )}
       </div>
     </div>
