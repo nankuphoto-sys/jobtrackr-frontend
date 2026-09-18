@@ -16,10 +16,10 @@ test('registro exitoso guarda el token y redirige a /applications', async ({ pag
   const email = uniqueEmail('e2e-register');
 
   await page.goto('/register');
-  await page.fill('#email', email);
-  await page.fill('#password', 'secret123');
-  await page.fill('#confirmPassword', 'secret123');
-  await page.click('button[type=submit]');
+  await page.getByLabel('Correo').fill(email);
+  await page.getByLabel('Contraseña', { exact: true }).fill('secret123');
+  await page.getByLabel('Confirmar contraseña').fill('secret123');
+  await page.getByRole('button', { name: 'Crear cuenta' }).click();
 
   await expect(page).toHaveURL(/\/applications$/);
   const token = await page.evaluate(() => localStorage.getItem('jobtrackr_token'));
@@ -33,21 +33,24 @@ test('registro con contraseñas distintas no llama al backend', async ({ page })
   });
 
   await page.goto('/register');
-  await page.fill('#email', uniqueEmail('e2e-mismatch'));
-  await page.fill('#password', 'secret123');
-  await page.fill('#confirmPassword', 'otra-cosa');
-  await page.click('button[type=submit]');
+  await page.getByLabel('Correo').fill(uniqueEmail('e2e-mismatch'));
+  await page.getByLabel('Contraseña', { exact: true }).fill('secret123');
+  await page.getByLabel('Confirmar contraseña').fill('otra-cosa');
+  await page.getByLabel('Confirmar contraseña').blur();
 
+  // El botón se deshabilita mientras el formulario no valide (no hace falta
+  // ni intentar el submit para bloquear la llamada al backend).
   await expect(page.getByText('Las contraseñas no coinciden')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Crear cuenta' })).toBeDisabled();
   expect(registerCalled).toBe(false);
   await expect(page).toHaveURL(/\/register$/);
 });
 
 test('login con contraseña incorrecta muestra error y no redirige', async ({ page }) => {
   await page.goto('/login');
-  await page.fill('#email', uniqueEmail('e2e-nouser'));
-  await page.fill('#password', 'lo-que-sea');
-  await page.click('button[type=submit]');
+  await page.getByLabel('Correo').fill(uniqueEmail('e2e-nouser'));
+  await page.getByLabel('Contraseña').fill('lo-que-sea');
+  await page.getByRole('button', { name: 'Entrar' }).click();
 
   await expect(page.getByText('Credenciales inválidas')).toBeVisible();
   await expect(page).toHaveURL(/\/login$/);

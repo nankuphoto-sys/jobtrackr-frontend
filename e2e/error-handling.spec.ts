@@ -21,7 +21,7 @@ test('si la carga inicial falla, muestra el error con un botón de reintentar qu
   await page.getByRole('button', { name: 'Reintentar' }).click();
 
   await expect(page.getByText('Error del servidor')).not.toBeVisible();
-  await expect(page.getByText('Todavía no registraste ninguna postulación.')).toBeVisible();
+  await expect(page.getByText('Tu tablero está vacío')).toBeVisible();
 });
 
 test('un error al cambiar de estado se muestra sin ocultar el tablero, y se puede cerrar', async ({ page, request }) => {

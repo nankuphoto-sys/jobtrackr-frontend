@@ -4,8 +4,11 @@ import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { api, ApiError } from '@/lib/api';
-import { saveToken } from '@/lib/auth';
+import { saveToken, saveUserEmail } from '@/lib/auth';
 import { AuthResponse } from '@/lib/types';
+
+const inputClass =
+  'w-full border px-3 py-3 text-[14px] text-ink outline-none focus:border-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-ink focus-visible:outline-offset-2';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -22,73 +25,82 @@ export default function LoginPage() {
     try {
       const data = await api.post<AuthResponse>('/auth/login', { email, password });
       saveToken(data.token);
+      saveUserEmail(data.user.email);
       router.push('/applications');
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'No se pudo conectar con el servidor');
-    } finally {
       setLoading(false);
     }
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center p-4 sm:p-6">
-      <div className="w-full max-w-sm bg-white rounded-lg shadow-sm border border-gray-200 p-6 sm:p-8">
-        <h1 className="text-2xl font-bold text-gray-900">Iniciar sesión</h1>
-        <p className="mt-1 text-sm text-gray-500">Bienvenido de vuelta a JobTrackr</p>
+    <main className="flex min-h-screen items-center justify-center bg-page p-4 sm:p-6">
+      <section className="flex w-full max-w-sm flex-col gap-5 border border-line-strong bg-surface p-8">
+        <div className="flex flex-col gap-2.5">
+          <span className="grid h-[26px] w-[26px] place-items-center bg-ink font-mono text-[13px] font-semibold text-white">
+            J
+          </span>
+          <h1 className="text-[22px] font-semibold leading-[1.15] tracking-[-.01em] text-ink">Iniciar sesión</h1>
+          <p className="text-[14px] leading-[1.5] text-muted">Continúa el seguimiento de tus postulaciones.</p>
+        </div>
 
-        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-              Email
-            </label>
+        {error && (
+          <div className="border border-l-[3px] border-status-rechazado bg-status-rechazado-bg px-[13px] py-[11px]">
+            <span className="text-[13px] font-medium text-status-rechazado-text">{error}</span>
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
+          <label className="flex flex-col gap-1.5">
+            <span className="font-mono text-[10px] font-medium uppercase tracking-[.1em] text-muted">Correo</span>
             <input
-              id="email"
               type="email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="tu@email.com"
+              className={`${inputClass} border-line-strong`}
+              placeholder="tu@correo.com"
             />
-          </div>
+          </label>
 
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+          <label className="flex flex-col gap-1.5">
+            <span className="font-mono text-[10px] font-medium uppercase tracking-[.1em] text-muted">
               Contraseña
-            </label>
+            </span>
             <input
-              id="password"
               type="password"
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={`${inputClass} ${error ? 'border-status-rechazado' : 'border-line-strong'}`}
               placeholder="••••••••"
             />
-          </div>
-
-          {error && (
-            <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2">
-              {error}
-            </p>
-          )}
+          </label>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="mt-1 w-full bg-ink px-4 py-3.5 text-[14px] font-semibold text-white transition-colors hover:bg-ink-2 disabled:opacity-50"
           >
-            {loading ? 'Entrando...' : 'Entrar'}
+            Entrar
           </button>
         </form>
 
-        <p className="mt-6 text-center text-sm text-gray-500">
-          ¿No tienes cuenta?{' '}
-          <Link href="/register" className="text-blue-600 hover:underline">
-            Regístrate
-          </Link>
-        </p>
-      </div>
+        <div className="flex flex-wrap items-center justify-between gap-2.5">
+          <span className="text-[13px] text-muted">
+            ¿No tienes cuenta?{' '}
+            <Link href="/register" className="text-ink underline underline-offset-2 hover:text-muted">
+              Registrarse
+            </Link>
+          </span>
+          {loading && (
+            <span className="flex items-center gap-2 border border-line px-3 py-2 font-mono text-[12px] font-semibold uppercase tracking-[.06em] text-muted">
+              <span className="h-[9px] w-[9px] animate-spin rounded-full border-2 border-line-strong border-t-muted" />
+              Cargando
+            </span>
+          )}
+        </div>
+      </section>
     </main>
   );
 }

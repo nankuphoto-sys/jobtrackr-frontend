@@ -1,57 +1,104 @@
 'use client';
 
-import Link from 'next/link';
 import { useDraggable } from '@dnd-kit/core';
 import { JobApplication } from '@/lib/types';
+import { STATUS_BORDER_CLASS } from '@/lib/statusStyles';
 
-/** Contenido visual puro de la tarjeta, sin hooks de drag — se reutiliza en el DragOverlay. */
-export function CardContent({ app }: { app: JobApplication }) {
+const MONTHS_ES = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
+
+// UTC, no local time: appliedAt es una fecha sin hora ("2026-03-11"), y leerla en
+// horario local podría restarle un día en zonas UTC-N (Colombia incluida).
+function formatCardDate(iso: string): string {
+  const d = new Date(iso);
+  const day = String(d.getUTCDate()).padStart(2, '0');
+  return `${day} ${MONTHS_ES[d.getUTCMonth()]}`;
+}
+
+function LinkIcon() {
   return (
-    <>
-      <p className="font-semibold text-gray-900 text-sm">{app.company}</p>
-      <p className="text-xs text-gray-600">{app.role}</p>
-      {app.link && (
-        <a
-          href={app.link}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={(e) => e.stopPropagation()}
-          className="mt-1 inline-block text-xs text-blue-600 hover:underline break-all"
-        >
-          {app.link}
-        </a>
-      )}
-      {app.notes && <p className="mt-1 text-xs text-gray-500 line-clamp-2">{app.notes}</p>}
-    </>
+    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth={2.2}>
+      <path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1" />
+      <path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1" />
+    </svg>
   );
 }
 
-export function KanbanCard({ app, onDelete }: { app: JobApplication; onDelete: (id: string) => void }) {
+function NotesIcon() {
+  return (
+    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth={2.2}>
+      <path d="M4 5h16M4 11h16M4 17h9" />
+    </svg>
+  );
+}
+
+/** Contenido visual puro de la tarjeta, sin hooks de drag — se reutiliza en el DragOverlay. */
+export function CardContent({ app }: { app: JobApplication }) {
+  const hasIndicators = Boolean(app.link || app.notes);
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className="flex items-start justify-between gap-2">
+        <span className="font-semibold text-[14px] leading-[1.25] text-ink">{app.company}</span>
+        <span className="shrink-0 whitespace-nowrap font-mono text-[10px] font-medium leading-[1.4] text-muted">
+          {formatCardDate(app.appliedAt ?? app.createdAt)}
+        </span>
+      </div>
+      <span className="text-[13px] leading-[1.35] text-ink-3">{app.role}</span>
+      {hasIndicators && (
+        <div className="mt-0.5 flex items-center justify-between gap-2">
+          <div className="flex gap-[5px]">
+            {app.link && (
+              <span className="grid h-[18px] w-[18px] place-items-center border border-line">
+                <LinkIcon />
+              </span>
+            )}
+            {app.notes && (
+              <span className="grid h-[18px] w-[18px] place-items-center border border-line">
+                <NotesIcon />
+              </span>
+            )}
+          </div>
+          <span className="hidden font-mono text-[10px] font-medium uppercase tracking-[.08em] text-muted max-sm:inline">
+            Mover →
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function KanbanCard({
+  app,
+  onEdit,
+}: {
+  app: JobApplication;
+  onEdit: (app: JobApplication) => void;
+}) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: app.id });
 
   const style = transform
     ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)` }
     : undefined;
 
+  const isOferta = app.status === 'OFERTA';
+  const isRechazado = app.status === 'RECHAZADO';
+
   return (
     <div
       ref={setNodeRef}
       style={style}
-      className={`bg-white border border-gray-200 rounded-lg p-3 shadow-sm ${isDragging ? 'opacity-30' : ''}`}
+      {...listeners}
+      {...attributes}
+      onClick={() => onEdit(app)}
+      data-testid={`card-${app.id}`}
+      className={[
+        'cursor-grab touch-none border border-line bg-surface p-3 outline-none transition-colors active:cursor-grabbing hover:border-line-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-ink focus-visible:outline-offset-2',
+        isOferta ? `border-l-[3px] ${STATUS_BORDER_CLASS.OFERTA}` : '',
+        isRechazado ? 'opacity-[.72] hover:opacity-100' : '',
+        isDragging ? 'opacity-30' : '',
+      ].join(' ')}
     >
-      {/* Solo esta zona es "agarrable": así los links/botones de abajo no compiten con el drag. */}
-      <div {...listeners} {...attributes} className="cursor-grab active:cursor-grabbing touch-none">
-        <CardContent app={app} />
-      </div>
-
-      <div className="mt-2 pt-2 border-t border-gray-100 flex gap-3 text-xs">
-        <Link href={`/applications/${app.id}/edit`} className="text-gray-500 hover:text-gray-700 hover:underline">
-          Editar
-        </Link>
-        <button onClick={() => onDelete(app.id)} className="text-red-600 hover:text-red-700 hover:underline">
-          Borrar
-        </button>
-      </div>
+      <CardContent app={app} />
     </div>
   );
 }

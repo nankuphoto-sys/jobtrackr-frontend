@@ -100,7 +100,10 @@ test('las métricas de arriba reflejan los conteos y la tasa de respuesta', asyn
   await page.goto('/applications');
 
   // De 3 aplicadas (todo menos "Por aplicar"), 1 avanzó a Entrevista/Oferta -> 33%.
-  await expect(page.getByText('33%')).toBeVisible();
-  await expect(page.getByText('tasa de respuesta')).toBeVisible();
-  await expect(page.getByText('4', { exact: true }).first()).toBeVisible();
+  // Las métricas se renderizan dos veces (franja desktop + fila compacta mobile,
+  // una de las dos oculta por CSS según el viewport) — se escopea a la desktop.
+  const desktopStats = page.locator('[data-testid="stats-desktop"]');
+  await expect(desktopStats.getByText('33%')).toBeVisible();
+  await expect(desktopStats.getByText('Tasa de respuesta')).toBeVisible();
+  await expect(desktopStats.getByText('4', { exact: true }).first()).toBeVisible();
 });

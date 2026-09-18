@@ -4,117 +4,160 @@ import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { api, ApiError } from '@/lib/api';
-import { saveToken } from '@/lib/auth';
+import { saveToken, saveUserEmail } from '@/lib/auth';
 import { AuthResponse } from '@/lib/types';
+
+const inputClass =
+  'w-full border px-3 py-3 text-[14px] text-ink outline-none focus:border-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-ink focus-visible:outline-offset-2';
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function passwordStrength(pw: string): 0 | 1 | 2 | 3 {
+  if (pw.length === 0) return 0;
+  if (pw.length < 8) return 1;
+  const variety = [/[a-z]/.test(pw), /[A-Z]/.test(pw), /[0-9]/.test(pw), /[^a-zA-Z0-9]/.test(pw)].filter(
+    Boolean
+  ).length;
+  if (pw.length >= 12 && variety >= 3) return 3;
+  if (variety >= 2) return 2;
+  return 1;
+}
+
+const STRENGTH_BAR_COLOR = ['bg-line', 'bg-status-rechazado', 'bg-status-entrevista', 'bg-status-oferta'];
 
 export default function RegisterPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [touched, setTouched] = useState({ email: false, password: false, confirmPassword: false });
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const emailValid = EMAIL_RE.test(email);
+  const strength = passwordStrength(password);
+  const passwordValid = password.length >= 8;
+  const confirmValid = confirmPassword === password && confirmPassword.length > 0;
+  const formValid = emailValid && passwordValid && confirmValid;
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    setTouched({ email: true, password: true, confirmPassword: true });
     setError(null);
-
-    if (password.length < 6) {
-      setError('La contraseña debe tener al menos 6 caracteres');
-      return;
-    }
-    if (password !== confirmPassword) {
-      setError('Las contraseñas no coinciden');
-      return;
-    }
+    if (!formValid) return;
 
     setLoading(true);
     try {
       const data = await api.post<AuthResponse>('/auth/register', { email, password });
       saveToken(data.token);
+      saveUserEmail(data.user.email);
       router.push('/applications');
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'No se pudo conectar con el servidor');
-    } finally {
       setLoading(false);
     }
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center p-4 sm:p-6">
-      <div className="w-full max-w-sm bg-white rounded-lg shadow-sm border border-gray-200 p-6 sm:p-8">
-        <h1 className="text-2xl font-bold text-gray-900">Crear cuenta</h1>
-        <p className="mt-1 text-sm text-gray-500">Empieza a trackear tus postulaciones</p>
+    <main className="flex min-h-screen items-center justify-center bg-page p-4 sm:p-6">
+      <section className="flex w-full max-w-sm flex-col gap-5 border border-line-strong bg-surface p-8">
+        <div className="flex flex-col gap-2.5">
+          <span className="grid h-[26px] w-[26px] place-items-center bg-ink font-mono text-[13px] font-semibold text-white">
+            J
+          </span>
+          <h1 className="text-[22px] font-semibold leading-[1.15] tracking-[-.01em] text-ink">Crear cuenta</h1>
+          <p className="text-[14px] leading-[1.5] text-muted">Un tablero para todas tus vacantes.</p>
+        </div>
 
-        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-              Email
-            </label>
+        {error && (
+          <div className="border border-l-[3px] border-status-rechazado bg-status-rechazado-bg px-[13px] py-[11px]">
+            <span className="text-[13px] font-medium text-status-rechazado-text">{error}</span>
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
+          <label className="flex flex-col gap-1.5">
+            <span className="font-mono text-[10px] font-medium uppercase tracking-[.1em] text-muted">Correo</span>
             <input
-              id="email"
               type="email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="tu@email.com"
+              onBlur={() => setTouched((t) => ({ ...t, email: true }))}
+              className={`${inputClass} ${touched.email && !emailValid ? 'border-status-rechazado' : 'border-line-strong'}`}
+              placeholder="tu@correo.com"
             />
-          </div>
+            {touched.email && !emailValid && (
+              <span className="text-[12px] font-medium leading-[1.4] text-status-rechazado-text">
+                Escribe un correo válido, por ejemplo nombre@correo.com
+              </span>
+            )}
+          </label>
 
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+          <label className="flex flex-col gap-1.5">
+            <span className="font-mono text-[10px] font-medium uppercase tracking-[.1em] text-muted">
               Contraseña
-            </label>
+            </span>
             <input
-              id="password"
               type="password"
               required
-              minLength={6}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Mínimo 6 caracteres"
+              onBlur={() => setTouched((t) => ({ ...t, password: true }))}
+              className={`${inputClass} ${touched.password && !passwordValid ? 'border-status-rechazado' : 'border-line-strong'}`}
+              placeholder="Mínimo 8 caracteres"
             />
-          </div>
+            <div className="mt-0.5 flex gap-1">
+              {[1, 2, 3].map((bar) => (
+                <span
+                  key={bar}
+                  className={`h-[3px] flex-1 ${bar <= strength ? STRENGTH_BAR_COLOR[strength] : 'bg-line'}`}
+                />
+              ))}
+            </div>
+            {touched.password && !passwordValid && (
+              <span className="text-[12px] font-medium leading-[1.4] text-status-rechazado-text">
+                Mínimo 8 caracteres.
+              </span>
+            )}
+          </label>
 
-          <div>
-            <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
+          <label className="flex flex-col gap-1.5">
+            <span className="font-mono text-[10px] font-medium uppercase tracking-[.1em] text-muted">
               Confirmar contraseña
-            </label>
+            </span>
             <input
-              id="confirmPassword"
               type="password"
               required
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              onBlur={() => setTouched((t) => ({ ...t, confirmPassword: true }))}
+              className={`${inputClass} ${touched.confirmPassword && !confirmValid ? 'border-status-rechazado' : 'border-line-strong'}`}
               placeholder="Repite la contraseña"
             />
-          </div>
-
-          {error && (
-            <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2">
-              {error}
-            </p>
-          )}
+            {touched.confirmPassword && !confirmValid && (
+              <span className="text-[12px] font-medium leading-[1.4] text-status-rechazado-text">
+                Las contraseñas no coinciden.
+              </span>
+            )}
+          </label>
 
           <button
             type="submit"
-            disabled={loading}
-            className="w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={loading || (Object.values(touched).some(Boolean) && !formValid)}
+            className="mt-1 w-full bg-ink px-4 py-3.5 text-[14px] font-semibold text-white transition-colors hover:bg-ink-2 disabled:opacity-[.45]"
           >
             {loading ? 'Creando cuenta...' : 'Crear cuenta'}
           </button>
         </form>
 
-        <p className="mt-6 text-center text-sm text-gray-500">
+        <span className="text-[13px] text-muted">
           ¿Ya tienes cuenta?{' '}
-          <Link href="/login" className="text-blue-600 hover:underline">
-            Inicia sesión
+          <Link href="/login" className="text-ink underline underline-offset-2 hover:text-muted">
+            Iniciar sesión
           </Link>
-        </p>
-      </div>
+        </span>
+      </section>
     </main>
   );
 }

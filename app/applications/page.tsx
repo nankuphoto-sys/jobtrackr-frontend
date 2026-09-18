@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import {
   DndContext,
+  DragCancelEvent,
   DragEndEvent,
+  DragOverEvent,
   DragOverlay,
   DragStartEvent,
   KeyboardCode,
@@ -16,11 +17,16 @@ import {
   useSensors,
 } from '@dnd-kit/core';
 import { api, ApiError } from '@/lib/api';
-import { getToken, clearToken } from '@/lib/auth';
+import { getToken, clearToken, getUserEmail } from '@/lib/auth';
 import { APPLICATION_STATUSES, ApplicationStatus, JobApplication, STATUS_LABELS } from '@/lib/types';
+import { computeStats } from '@/lib/stats';
+import { STATUS_ACCENT_TEXT_CLASS } from '@/lib/statusStyles';
 import { CardContent } from '@/components/KanbanCard';
 import { KanbanColumn } from '@/components/KanbanColumn';
 import { StatsBar } from '@/components/StatsBar';
+import { ApplicationModal } from '@/components/ApplicationModal';
+
+type ModalState = { mode: 'create' } | { mode: 'edit'; app: JobApplication } | null;
 
 /**
  * El coordinate getter por defecto de dnd-kit mueve la tarjeta 25px por
@@ -60,6 +66,9 @@ export default function ApplicationsPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [activeApp, setActiveApp] = useState<JobApplication | null>(null);
+  const [overStatus, setOverStatus] = useState<ApplicationStatus | null>(null);
+  const [modalState, setModalState] = useState<ModalState>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -115,6 +124,7 @@ export default function ApplicationsPage() {
       router.replace('/login');
       return;
     }
+    setUserEmail(getUserEmail());
     loadApplications();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]);
@@ -137,27 +147,27 @@ export default function ApplicationsPage() {
     }
   }
 
-  async function handleDelete(id: string) {
-    if (!window.confirm('¿Borrar esta postulación? Esta acción no se puede deshacer.')) return;
+  function handleSaved(saved: JobApplication) {
+    setApplications((apps) => (apps.some((a) => a.id === saved.id) ? apps.map((a) => (a.id === saved.id ? saved : a)) : [...apps, saved]));
+    setModalState(null);
+  }
 
-    setActionError(null);
-    const previous = applications;
+  function handleDeleted(id: string) {
     setApplications((apps) => apps.filter((a) => a.id !== id));
-
-    try {
-      await api.delete(`/applications/${id}`);
-    } catch (err) {
-      setApplications(previous);
-      setActionError(err instanceof ApiError ? err.message : 'No se pudo borrar la postulación');
-    }
+    setModalState(null);
   }
 
   function handleDragStart(event: DragStartEvent) {
     setActiveApp(applications.find((a) => a.id === event.active.id) ?? null);
   }
 
+  function handleDragOver(event: DragOverEvent) {
+    setOverStatus((event.over?.id as ApplicationStatus | undefined) ?? null);
+  }
+
   function handleDragEnd(event: DragEndEvent) {
     setActiveApp(null);
+    setOverStatus(null);
     const { active, over } = event;
     if (!over) return;
 
@@ -168,106 +178,246 @@ export default function ApplicationsPage() {
     handleStatusChange(app.id, newStatus);
   }
 
+  function handleDragCancel(_event: DragCancelEvent) {
+    setActiveApp(null);
+    setOverStatus(null);
+  }
+
+  const { thisWeek, responseRate } = computeStats(applications);
+  const initials = (userEmail ?? 'JT').slice(0, 2).toUpperCase();
+  const hasBoard = !loading && !loadError;
+
   return (
-    <main className="min-h-screen p-4 sm:p-6">
-      <div className="max-w-6xl mx-auto">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <h1 className="text-2xl font-bold text-gray-900">Mis postulaciones</h1>
-          <div className="flex gap-2">
-            <Link
-              href="/applications/new"
-              className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 text-center"
-            >
-              + Nueva postulación
-            </Link>
+    <main className="min-h-screen bg-page pb-24 sm:pb-6 sm:p-6">
+      <div className="mx-auto max-w-[1180px] bg-surface sm:border sm:border-line-strong">
+        {/* Topbar — desktop */}
+        <header className="hidden items-center justify-between gap-4 border-b border-line px-5 py-3.5 sm:flex">
+          <div className="flex items-center gap-2.5">
+            <span className="grid h-[22px] w-[22px] place-items-center bg-ink font-mono text-[12px] font-semibold text-white">
+              J
+            </span>
+            <span className="text-[15px] font-semibold tracking-[-.01em] text-ink">JobTrackr</span>
+          </div>
+          <div className="flex items-center gap-3">
+            {userEmail && <span className="text-[13px] text-ink-3">{userEmail}</span>}
+            <span className="h-5 w-px bg-line" />
             <button
               onClick={handleLogout}
-              className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              className="px-0.5 py-1.5 text-[13px] font-medium text-muted transition-colors hover:text-ink"
             >
-              Cerrar sesión
+              Salir
             </button>
-          </div>
-        </div>
-
-        {loading && (
-          <div className="mt-6 flex gap-4 overflow-x-auto pb-2">
-            {[...Array(5)].map((_, i) => (
-              <div key={i} className="w-72 flex-shrink-0 animate-pulse">
-                <div className="h-9 bg-gray-100 rounded-t-lg" />
-                <div className="min-h-[160px] p-2 space-y-2 rounded-b-lg border border-t-0 border-gray-200 bg-gray-50">
-                  <div className="h-16 bg-white border border-gray-200 rounded-lg" />
-                  <div className="h-16 bg-white border border-gray-200 rounded-lg" />
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {loadError && (
-          <div className="mt-6 flex items-center justify-between gap-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2">
-            <span>{loadError}</span>
             <button
-              onClick={loadApplications}
-              className="shrink-0 rounded-md border border-red-300 px-2 py-1 text-xs font-medium text-red-700 hover:bg-red-100"
+              onClick={() => setModalState({ mode: 'create' })}
+              className="flex items-center gap-1.5 bg-ink px-3.5 py-2.5 text-[13px] font-semibold text-white transition-colors hover:bg-ink-2"
             >
-              Reintentar
+              <span className="font-mono text-[15px] leading-none">+</span>Nueva postulación
             </button>
           </div>
+        </header>
+
+        {/* Topbar — mobile */}
+        <header className="flex items-center justify-between border-b border-line px-3.5 py-3 sm:hidden">
+          <div className="flex items-center gap-2">
+            <span className="grid h-5 w-5 place-items-center bg-ink font-mono text-[11px] font-semibold text-white">
+              J
+            </span>
+            <span className="text-[14px] font-semibold text-ink">JobTrackr</span>
+          </div>
+          <button
+            onClick={handleLogout}
+            aria-label="Cerrar sesión"
+            className="grid h-7 w-7 place-items-center border border-line text-[12px] font-medium text-ink-3"
+          >
+            {initials}
+          </button>
+        </header>
+
+        {hasBoard && applications.length > 0 && (
+          <>
+            <div className="hidden sm:block" data-testid="stats-desktop">
+              <StatsBar applications={applications} />
+            </div>
+            <div className="flex gap-4 border-b border-line px-3.5 py-3 sm:hidden" data-testid="stats-mobile">
+              <MobileMetric label="Total" value={applications.length} />
+              <MobileMetric label="Semana" value={thisWeek} />
+              <MobileMetric
+                label="Respuesta"
+                value={responseRate === null ? '—' : `${responseRate}%`}
+                valueClassName="text-status-oferta"
+              />
+            </div>
+          </>
         )}
 
         {actionError && (
-          <div className="mt-6 flex items-center justify-between gap-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2">
-            <span>{actionError}</span>
+          <div className="mx-3.5 mt-3.5 flex items-center justify-between gap-3 border border-l-[3px] border-status-rechazado bg-status-rechazado-bg px-3 py-2 sm:mx-5 sm:mt-4">
+            <span className="text-[13px] font-medium text-status-rechazado-text">{actionError}</span>
             <button
               onClick={() => setActionError(null)}
               aria-label="Cerrar mensaje de error"
-              className="shrink-0 text-red-500 hover:text-red-700"
+              className="shrink-0 text-status-rechazado-text hover:opacity-70"
             >
               ✕
             </button>
           </div>
         )}
 
-        {!loading && !loadError && applications.length === 0 && (
-          <p className="mt-6 text-sm text-gray-500">
-            Todavía no registraste ninguna postulación.
-          </p>
+        {loading && <LoadingSkeleton />}
+
+        {!loading && loadError && <ErrorState message={loadError} onRetry={loadApplications} />}
+
+        {hasBoard && applications.length === 0 && (
+          <EmptyState onCreate={() => setModalState({ mode: 'create' })} />
         )}
 
-        {!loading && !loadError && applications.length > 0 && (
-          <>
-            <div className="mt-6">
-              <StatsBar applications={applications} />
-            </div>
-
-            <DndContext
-              sensors={sensors}
-              accessibility={accessibility}
-              onDragStart={handleDragStart}
-              onDragEnd={handleDragEnd}
-            >
-              <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory -mx-4 px-4 sm:mx-0 sm:px-0">
-                {APPLICATION_STATUSES.map((status) => (
+        {hasBoard && applications.length > 0 && (
+          <DndContext
+            sensors={sensors}
+            accessibility={accessibility}
+            onDragStart={handleDragStart}
+            onDragOver={handleDragOver}
+            onDragEnd={handleDragEnd}
+            onDragCancel={handleDragCancel}
+          >
+            <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory bg-canvas p-3.5 sm:grid sm:grid-cols-[repeat(5,minmax(190px,1fr))] sm:gap-3 sm:p-[18px]">
+              {APPLICATION_STATUSES.map((status) => (
+                <div key={status} className="w-[82vw] max-w-[320px] shrink-0 snap-start sm:w-auto sm:max-w-none">
                   <KanbanColumn
-                    key={status}
                     status={status}
                     applications={applications.filter((a) => a.status === status)}
-                    onDelete={handleDelete}
+                    onEdit={(app) => setModalState({ mode: 'edit', app })}
+                    activeApp={activeApp}
                   />
-                ))}
-              </div>
+                </div>
+              ))}
+            </div>
 
-              <DragOverlay>
-                {activeApp && (
-                  <div className="w-72 bg-white border border-gray-300 rounded-lg p-3 shadow-lg rotate-2">
-                    <CardContent app={activeApp} />
-                  </div>
-                )}
-              </DragOverlay>
-            </DndContext>
-          </>
+            <DragOverlay>
+              {activeApp && (
+                <div className="w-[230px] -rotate-2 scale-[1.03] border border-ink bg-surface p-3 shadow-drag">
+                  <CardContent app={activeApp} />
+                  {overStatus && overStatus !== activeApp.status && (
+                    <p
+                      className={`mt-1.5 font-mono text-[10px] font-medium uppercase tracking-[.1em] ${STATUS_ACCENT_TEXT_CLASS[overStatus]}`}
+                    >
+                      Moviendo → {STATUS_LABELS[overStatus]}
+                    </p>
+                  )}
+                </div>
+              )}
+            </DragOverlay>
+          </DndContext>
         )}
       </div>
+
+      {hasBoard && (
+        <div className="fixed inset-x-0 bottom-0 border-t border-line bg-surface p-3.5 sm:hidden">
+          <button
+            onClick={() => setModalState({ mode: 'create' })}
+            className="w-full bg-ink px-4 py-3.5 text-[14px] font-semibold text-white transition-colors hover:bg-ink-2"
+          >
+            + Nueva postulación
+          </button>
+        </div>
+      )}
+
+      {modalState && (
+        <ApplicationModal
+          app={modalState.mode === 'edit' ? modalState.app : null}
+          onClose={() => setModalState(null)}
+          onSaved={handleSaved}
+          onDeleted={handleDeleted}
+        />
+      )}
     </main>
+  );
+}
+
+function MobileMetric({
+  label,
+  value,
+  valueClassName = 'text-ink',
+}: {
+  label: string;
+  value: string | number;
+  valueClassName?: string;
+}) {
+  return (
+    <span className="flex flex-col gap-1">
+      <span className="font-mono text-[9px] font-medium uppercase tracking-[.1em] text-muted">{label}</span>
+      <span className={`font-mono text-[18px] font-semibold leading-none ${valueClassName}`}>{value}</span>
+    </span>
+  );
+}
+
+function LoadingSkeleton() {
+  const delays = [0, 0.1, 0.15, 0.2, 0.25, 0.35];
+  return (
+    <div className="flex flex-col gap-3 bg-canvas p-3.5 sm:p-[18px]">
+      <span className="font-mono text-[10px] font-medium uppercase tracking-[.1em] text-muted">Cargando</span>
+      <div className="grid grid-cols-2 gap-2.5">
+        <div className="flex flex-col gap-2">
+          <span className="h-2.5 w-[60%] animate-shimmer bg-line" style={{ animationDelay: `${delays[0]}s` }} />
+          <span className="h-[62px] animate-shimmer bg-line" style={{ animationDelay: `${delays[1]}s` }} />
+          <span className="h-[62px] animate-shimmer bg-[#eceef1]" style={{ animationDelay: `${delays[2]}s` }} />
+        </div>
+        <div className="flex flex-col gap-2">
+          <span className="h-2.5 w-[45%] animate-shimmer bg-line" style={{ animationDelay: `${delays[3]}s` }} />
+          <span className="h-[62px] animate-shimmer bg-[#eceef1]" style={{ animationDelay: `${delays[4]}s` }} />
+          <span className="h-[62px] animate-shimmer bg-line" style={{ animationDelay: `${delays[5]}s` }} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return (
+    <div className="flex flex-col items-center gap-4 px-6 py-11 text-center">
+      <span className="grid h-9 w-9 place-items-center border border-status-rechazado font-mono text-[18px] font-semibold text-status-rechazado">
+        !
+      </span>
+      <div className="flex flex-col gap-2">
+        <span className="text-[17px] font-semibold leading-[1.25] text-ink">No pudimos cargar el tablero</span>
+        <p className="max-w-[32ch] text-[14px] leading-[1.5] text-muted">
+          La conexión con el servidor falló. Tus postulaciones siguen guardadas.
+        </p>
+        <span className="font-mono text-[11px] text-muted">{message}</span>
+      </div>
+      <button
+        onClick={onRetry}
+        className="border border-ink bg-surface px-[18px] py-3 text-[13px] font-semibold text-ink transition-colors hover:bg-ink hover:text-white"
+      >
+        Reintentar
+      </button>
+    </div>
+  );
+}
+
+function EmptyState({ onCreate }: { onCreate: () => void }) {
+  return (
+    <div className="flex flex-col items-center gap-4 px-6 py-11 text-center">
+      <div className="flex gap-[5px]">
+        {[0, 1, 2, 3, 4].map((i) => (
+          <span
+            key={i}
+            className={`h-[34px] w-[22px] ${i === 2 ? 'border border-ink' : 'border border-dashed border-line-strong'}`}
+          />
+        ))}
+      </div>
+      <div className="flex flex-col gap-2">
+        <span className="text-[17px] font-semibold leading-[1.25] text-ink">Tu tablero está vacío</span>
+        <p className="max-w-[30ch] text-[14px] leading-[1.5] text-muted">
+          Registra la primera vacante y arrástrala entre columnas a medida que avance el proceso.
+        </p>
+      </div>
+      <button
+        onClick={onCreate}
+        className="bg-ink px-[18px] py-3 text-[13px] font-semibold text-white transition-colors hover:bg-ink-2"
+      >
+        + Crear la primera
+      </button>
+    </div>
   );
 }
