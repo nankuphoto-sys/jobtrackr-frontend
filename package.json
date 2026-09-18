@@ -3,8 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "carbon:css": "sass app/carbon.scss app/carbon.css --load-path=node_modules --no-source-map",
+    "predev": "npm run carbon:css",
+    "prebuild": "npm run carbon:css",
+    "dev": "next dev --webpack",
+    "build": "next build --webpack",
     "start": "next start",
     "lint": "next lint",
     "test": "vitest run",
@@ -12,11 +15,14 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@carbon/icons-react": "^11.88.0",
+    "@carbon/react": "^1.116.0",
     "@dnd-kit/core": "^6.3.1",
     "@sentry/nextjs": "^10.75.0",
     "next": "^16.3.5",
     "react": "^19.3.0",
-    "react-dom": "^19.3.0"
+    "react-dom": "^19.3.0",
+    "sass": "^1.104.1"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",

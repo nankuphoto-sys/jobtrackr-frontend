@@ -49,7 +49,7 @@ test('registro con contraseñas distintas no llama al backend', async ({ page })
 test('login con contraseña incorrecta muestra error y no redirige', async ({ page }) => {
   await page.goto('/login');
   await page.getByLabel('Correo').fill(uniqueEmail('e2e-nouser'));
-  await page.getByLabel('Contraseña').fill('lo-que-sea');
+  await page.getByLabel('Contraseña', { exact: true }).fill('lo-que-sea');
   await page.getByRole('button', { name: 'Entrar' }).click();
 
   await expect(page.getByText('Credenciales inválidas')).toBeVisible();

@@ -16,11 +16,22 @@ import {
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
+import {
+  Header,
+  HeaderName,
+  HeaderGlobalBar,
+  HeaderGlobalAction,
+  Button,
+  InlineNotification,
+  SkeletonText,
+  SkeletonPlaceholder,
+} from '@carbon/react';
+import { Add, Logout, WarningFilled } from '@carbon/icons-react';
 import { api, ApiError } from '@/lib/api';
 import { getToken, clearToken, getUserEmail } from '@/lib/auth';
 import { APPLICATION_STATUSES, ApplicationStatus, JobApplication, STATUS_LABELS } from '@/lib/types';
 import { computeStats } from '@/lib/stats';
-import { STATUS_ACCENT_TEXT_CLASS } from '@/lib/statusStyles';
+import { STATUS_ACCENT_COLOR } from '@/lib/statusStyles';
 import { CardContent } from '@/components/KanbanCard';
 import { KanbanColumn } from '@/components/KanbanColumn';
 import { StatsBar } from '@/components/StatsBar';
@@ -184,82 +195,66 @@ export default function ApplicationsPage() {
   }
 
   const { thisWeek, responseRate } = computeStats(applications);
-  const initials = (userEmail ?? 'JT').slice(0, 2).toUpperCase();
   const hasBoard = !loading && !loadError;
 
   return (
-    <main className="min-h-screen bg-page pb-24 sm:pb-6 sm:p-6">
-      <div className="mx-auto max-w-[1180px] bg-surface sm:border sm:border-line-strong">
-        {/* Topbar — desktop */}
-        <header className="hidden items-center justify-between gap-4 border-b border-line px-5 py-3.5 sm:flex">
-          <div className="flex items-center gap-2.5">
-            <span className="grid h-[22px] w-[22px] place-items-center bg-ink font-mono text-[12px] font-semibold text-white">
-              J
-            </span>
-            <span className="text-[15px] font-semibold tracking-[-.01em] text-ink">JobTrackr</span>
-          </div>
-          <div className="flex items-center gap-3">
-            {userEmail && <span className="text-[13px] text-ink-3">{userEmail}</span>}
-            <span className="h-5 w-px bg-line" />
-            <button
-              onClick={handleLogout}
-              className="px-0.5 py-1.5 text-[13px] font-medium text-muted transition-colors hover:text-ink"
-            >
-              Salir
-            </button>
-            <button
-              onClick={() => setModalState({ mode: 'create' })}
-              className="flex items-center gap-1.5 bg-ink px-3.5 py-2.5 text-[13px] font-semibold text-white transition-colors hover:bg-ink-2"
-            >
-              <span className="font-mono text-[15px] leading-none">+</span>Nueva postulación
-            </button>
-          </div>
-        </header>
-
-        {/* Topbar — mobile */}
-        <header className="flex items-center justify-between border-b border-line px-3.5 py-3 sm:hidden">
-          <div className="flex items-center gap-2">
-            <span className="grid h-5 w-5 place-items-center bg-ink font-mono text-[11px] font-semibold text-white">
-              J
-            </span>
-            <span className="text-[14px] font-semibold text-ink">JobTrackr</span>
-          </div>
-          <button
-            onClick={handleLogout}
-            aria-label="Cerrar sesión"
-            className="grid h-7 w-7 place-items-center border border-line text-[12px] font-medium text-ink-3"
+    <div style={{ background: 'var(--cds-background)' }} className="min-h-screen pb-24 pt-12 sm:pb-6">
+      {/* Header de Carbon es position:fixed — pt-12 (48px) en el contenedor compensa su altura. */}
+      <Header aria-label="JobTrackr">
+        <HeaderName href="/applications" prefix="">
+          JobTrackr
+        </HeaderName>
+        {userEmail && (
+          <span
+            className="ml-auto hidden items-center pr-4 text-[13px] sm:flex"
+            style={{ color: 'var(--cds-text-secondary)' }}
           >
-            {initials}
-          </button>
-        </header>
+            {userEmail}
+          </span>
+        )}
+        <div className="hidden items-center pr-3 sm:flex">
+          <Button size="sm" renderIcon={Add} onClick={() => setModalState({ mode: 'create' })}>
+            Nueva postulación
+          </Button>
+        </div>
+        <HeaderGlobalBar>
+          <HeaderGlobalAction aria-label="Cerrar sesión" onClick={handleLogout}>
+            <Logout size={20} />
+          </HeaderGlobalAction>
+        </HeaderGlobalBar>
+      </Header>
 
+      <div className="mx-auto max-w-[1180px]">
         {hasBoard && applications.length > 0 && (
           <>
             <div className="hidden sm:block" data-testid="stats-desktop">
               <StatsBar applications={applications} />
             </div>
-            <div className="flex gap-4 border-b border-line px-3.5 py-3 sm:hidden" data-testid="stats-mobile">
+            <div
+              className="flex gap-4 border-b px-3.5 py-3 sm:hidden"
+              style={{ borderColor: 'var(--cds-border-subtle-00)' }}
+              data-testid="stats-mobile"
+            >
               <MobileMetric label="Total" value={applications.length} />
               <MobileMetric label="Semana" value={thisWeek} />
               <MobileMetric
                 label="Respuesta"
                 value={responseRate === null ? '—' : `${responseRate}%`}
-                valueClassName="text-status-oferta"
+                valueColor="var(--cds-support-success)"
               />
             </div>
           </>
         )}
 
         {actionError && (
-          <div className="mx-3.5 mt-3.5 flex items-center justify-between gap-3 border border-l-[3px] border-status-rechazado bg-status-rechazado-bg px-3 py-2 sm:mx-5 sm:mt-4">
-            <span className="text-[13px] font-medium text-status-rechazado-text">{actionError}</span>
-            <button
-              onClick={() => setActionError(null)}
+          <div className="px-3.5 pt-3.5 sm:px-5 sm:pt-4">
+            <InlineNotification
+              kind="error"
+              title={actionError}
+              lowContrast
+              onClose={() => setActionError(null)}
               aria-label="Cerrar mensaje de error"
-              className="shrink-0 text-status-rechazado-text hover:opacity-70"
-            >
-              ✕
-            </button>
+            />
           </div>
         )}
 
@@ -280,7 +275,10 @@ export default function ApplicationsPage() {
             onDragEnd={handleDragEnd}
             onDragCancel={handleDragCancel}
           >
-            <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory bg-canvas p-3.5 sm:grid sm:grid-cols-[repeat(5,minmax(190px,1fr))] sm:gap-3 sm:p-[18px]">
+            <div
+              className="flex gap-3 overflow-x-auto snap-x snap-mandatory p-3.5 sm:grid sm:grid-cols-[repeat(5,minmax(190px,1fr))] sm:gap-3 sm:p-[18px]"
+              style={{ background: 'var(--cds-layer)' }}
+            >
               {APPLICATION_STATUSES.map((status) => (
                 <div key={status} className="w-[82vw] max-w-[320px] shrink-0 snap-start sm:w-auto sm:max-w-none">
                   <KanbanColumn
@@ -295,11 +293,15 @@ export default function ApplicationsPage() {
 
             <DragOverlay>
               {activeApp && (
-                <div className="w-[230px] -rotate-2 scale-[1.03] border border-ink bg-surface p-3 shadow-drag">
+                <div
+                  className="w-[230px] -rotate-2 scale-[1.03] border p-3 shadow-[0_14px_28px_rgba(17,24,39,.18)]"
+                  style={{ borderColor: 'var(--cds-border-strong-01)', background: 'var(--cds-layer)' }}
+                >
                   <CardContent app={activeApp} />
                   {overStatus && overStatus !== activeApp.status && (
                     <p
-                      className={`mt-1.5 font-mono text-[10px] font-medium uppercase tracking-[.1em] ${STATUS_ACCENT_TEXT_CLASS[overStatus]}`}
+                      className="mt-1.5 font-mono text-[10px] font-medium uppercase tracking-[.1em]"
+                      style={{ color: STATUS_ACCENT_COLOR[overStatus] }}
                     >
                       Moviendo → {STATUS_LABELS[overStatus]}
                     </p>
@@ -312,13 +314,13 @@ export default function ApplicationsPage() {
       </div>
 
       {hasBoard && (
-        <div className="fixed inset-x-0 bottom-0 border-t border-line bg-surface p-3.5 sm:hidden">
-          <button
-            onClick={() => setModalState({ mode: 'create' })}
-            className="w-full bg-ink px-4 py-3.5 text-[14px] font-semibold text-white transition-colors hover:bg-ink-2"
-          >
-            + Nueva postulación
-          </button>
+        <div
+          className="fixed inset-x-0 bottom-0 border-t p-3.5 sm:hidden"
+          style={{ borderColor: 'var(--cds-border-subtle-00)', background: 'var(--cds-layer)' }}
+        >
+          <Button renderIcon={Add} onClick={() => setModalState({ mode: 'create' })} className="w-full justify-center">
+            Nueva postulación
+          </Button>
         </div>
       )}
 
@@ -330,43 +332,43 @@ export default function ApplicationsPage() {
           onDeleted={handleDeleted}
         />
       )}
-    </main>
+    </div>
   );
 }
 
 function MobileMetric({
   label,
   value,
-  valueClassName = 'text-ink',
+  valueColor = 'var(--cds-text-primary)',
 }: {
   label: string;
   value: string | number;
-  valueClassName?: string;
+  valueColor?: string;
 }) {
   return (
     <span className="flex flex-col gap-1">
-      <span className="font-mono text-[9px] font-medium uppercase tracking-[.1em] text-muted">{label}</span>
-      <span className={`font-mono text-[18px] font-semibold leading-none ${valueClassName}`}>{value}</span>
+      <span className="font-mono text-[9px] font-medium uppercase tracking-[.1em] text-[color:var(--cds-text-secondary)]">
+        {label}
+      </span>
+      <span className="font-mono text-[18px] font-semibold leading-none" style={{ color: valueColor }}>
+        {value}
+      </span>
     </span>
   );
 }
 
 function LoadingSkeleton() {
-  const delays = [0, 0.1, 0.15, 0.2, 0.25, 0.35];
   return (
-    <div className="flex flex-col gap-3 bg-canvas p-3.5 sm:p-[18px]">
-      <span className="font-mono text-[10px] font-medium uppercase tracking-[.1em] text-muted">Cargando</span>
-      <div className="grid grid-cols-2 gap-2.5">
-        <div className="flex flex-col gap-2">
-          <span className="h-2.5 w-[60%] animate-shimmer bg-line" style={{ animationDelay: `${delays[0]}s` }} />
-          <span className="h-[62px] animate-shimmer bg-line" style={{ animationDelay: `${delays[1]}s` }} />
-          <span className="h-[62px] animate-shimmer bg-[#eceef1]" style={{ animationDelay: `${delays[2]}s` }} />
-        </div>
-        <div className="flex flex-col gap-2">
-          <span className="h-2.5 w-[45%] animate-shimmer bg-line" style={{ animationDelay: `${delays[3]}s` }} />
-          <span className="h-[62px] animate-shimmer bg-[#eceef1]" style={{ animationDelay: `${delays[4]}s` }} />
-          <span className="h-[62px] animate-shimmer bg-line" style={{ animationDelay: `${delays[5]}s` }} />
-        </div>
+    <div className="flex flex-col gap-4 p-3.5 sm:p-[18px]" style={{ background: 'var(--cds-layer)' }}>
+      <SkeletonText width="140px" />
+      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-5">
+        {[0, 1, 2, 3, 4].map((i) => (
+          <div key={i} className="flex flex-col gap-2">
+            <SkeletonText width="60%" />
+            <SkeletonPlaceholder className="!h-[62px] !w-full" />
+            <SkeletonPlaceholder className="!h-[62px] !w-full" />
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -375,22 +377,19 @@ function LoadingSkeleton() {
 function ErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
     <div className="flex flex-col items-center gap-4 px-6 py-11 text-center">
-      <span className="grid h-9 w-9 place-items-center border border-status-rechazado font-mono text-[18px] font-semibold text-status-rechazado">
-        !
-      </span>
+      <WarningFilled size={36} style={{ color: 'var(--cds-support-error)' }} />
       <div className="flex flex-col gap-2">
-        <span className="text-[17px] font-semibold leading-[1.25] text-ink">No pudimos cargar el tablero</span>
-        <p className="max-w-[32ch] text-[14px] leading-[1.5] text-muted">
+        <span className="text-[17px] font-semibold leading-[1.25] text-[color:var(--cds-text-primary)]">
+          No pudimos cargar el tablero
+        </span>
+        <p className="max-w-[32ch] text-[14px] leading-[1.5] text-[color:var(--cds-text-secondary)]">
           La conexión con el servidor falló. Tus postulaciones siguen guardadas.
         </p>
-        <span className="font-mono text-[11px] text-muted">{message}</span>
+        <span className="font-mono text-[11px] text-[color:var(--cds-text-secondary)]">{message}</span>
       </div>
-      <button
-        onClick={onRetry}
-        className="border border-ink bg-surface px-[18px] py-3 text-[13px] font-semibold text-ink transition-colors hover:bg-ink hover:text-white"
-      >
+      <Button kind="tertiary" onClick={onRetry}>
         Reintentar
-      </button>
+      </Button>
     </div>
   );
 }
@@ -402,22 +401,25 @@ function EmptyState({ onCreate }: { onCreate: () => void }) {
         {[0, 1, 2, 3, 4].map((i) => (
           <span
             key={i}
-            className={`h-[34px] w-[22px] ${i === 2 ? 'border border-ink' : 'border border-dashed border-line-strong'}`}
+            className="h-[34px] w-[22px] border"
+            style={{
+              borderStyle: i === 2 ? 'solid' : 'dashed',
+              borderColor: i === 2 ? 'var(--cds-border-strong-01)' : 'var(--cds-border-subtle-01)',
+            }}
           />
         ))}
       </div>
       <div className="flex flex-col gap-2">
-        <span className="text-[17px] font-semibold leading-[1.25] text-ink">Tu tablero está vacío</span>
-        <p className="max-w-[30ch] text-[14px] leading-[1.5] text-muted">
+        <span className="text-[17px] font-semibold leading-[1.25] text-[color:var(--cds-text-primary)]">
+          Tu tablero está vacío
+        </span>
+        <p className="max-w-[30ch] text-[14px] leading-[1.5] text-[color:var(--cds-text-secondary)]">
           Registra la primera vacante y arrástrala entre columnas a medida que avance el proceso.
         </p>
       </div>
-      <button
-        onClick={onCreate}
-        className="bg-ink px-[18px] py-3 text-[13px] font-semibold text-white transition-colors hover:bg-ink-2"
-      >
-        + Crear la primera
-      </button>
+      <Button renderIcon={Add} onClick={onCreate}>
+        Crear la primera
+      </Button>
     </div>
   );
 }

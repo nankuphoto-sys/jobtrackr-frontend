@@ -10,3 +10,6 @@ coverage
 
 .vercel
 .env*
+
+# generado por `npm run carbon:css` a partir de app/carbon.scss
+app/carbon.css

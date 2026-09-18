@@ -3,12 +3,10 @@
 import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { TextInput, PasswordInput, Button, InlineNotification } from '@carbon/react';
 import { api, ApiError } from '@/lib/api';
 import { saveToken, saveUserEmail } from '@/lib/auth';
 import { AuthResponse } from '@/lib/types';
-
-const inputClass =
-  'w-full border px-3 py-3 text-[14px] text-ink outline-none focus:border-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-ink focus-visible:outline-offset-2';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -23,7 +21,12 @@ function passwordStrength(pw: string): 0 | 1 | 2 | 3 {
   return 1;
 }
 
-const STRENGTH_BAR_COLOR = ['bg-line', 'bg-status-rechazado', 'bg-status-entrevista', 'bg-status-oferta'];
+const STRENGTH_COLOR = [
+  'var(--cds-border-subtle-01)',
+  'var(--cds-support-error)',
+  'var(--cds-support-warning)',
+  'var(--cds-support-success)',
+];
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -59,103 +62,95 @@ export default function RegisterPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-page p-4 sm:p-6">
-      <section className="flex w-full max-w-sm flex-col gap-5 border border-line-strong bg-surface p-8">
+    <main
+      className="flex min-h-screen items-center justify-center p-4 sm:p-6"
+      style={{ background: 'var(--cds-background)' }}
+    >
+      <section
+        className="flex w-full max-w-sm flex-col gap-5 border p-8"
+        style={{ borderColor: 'var(--cds-border-subtle-01)', background: 'var(--cds-layer)' }}
+      >
         <div className="flex flex-col gap-2.5">
-          <span className="grid h-[26px] w-[26px] place-items-center bg-ink font-mono text-[13px] font-semibold text-white">
+          <span
+            className="grid h-[26px] w-[26px] place-items-center font-mono text-[13px] font-semibold"
+            style={{ background: 'var(--cds-text-primary)', color: 'var(--cds-background)' }}
+          >
             J
           </span>
-          <h1 className="text-[22px] font-semibold leading-[1.15] tracking-[-.01em] text-ink">Crear cuenta</h1>
-          <p className="text-[14px] leading-[1.5] text-muted">Un tablero para todas tus vacantes.</p>
+          <h1 className="text-[22px] font-semibold leading-[1.15] tracking-[-.01em] text-[color:var(--cds-text-primary)]">
+            Crear cuenta
+          </h1>
+          <p className="text-[14px] leading-[1.5] text-[color:var(--cds-text-secondary)]">
+            Un tablero para todas tus vacantes.
+          </p>
         </div>
 
-        {error && (
-          <div className="border border-l-[3px] border-status-rechazado bg-status-rechazado-bg px-[13px] py-[11px]">
-            <span className="text-[13px] font-medium text-status-rechazado-text">{error}</span>
-          </div>
-        )}
+        {error && <InlineNotification kind="error" title={error} lowContrast hideCloseButton />}
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
-          <label className="flex flex-col gap-1.5">
-            <span className="font-mono text-[10px] font-medium uppercase tracking-[.1em] text-muted">Correo</span>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              onBlur={() => setTouched((t) => ({ ...t, email: true }))}
-              className={`${inputClass} ${touched.email && !emailValid ? 'border-status-rechazado' : 'border-line-strong'}`}
-              placeholder="tu@correo.com"
-            />
-            {touched.email && !emailValid && (
-              <span className="text-[12px] font-medium leading-[1.4] text-status-rechazado-text">
-                Escribe un correo válido, por ejemplo nombre@correo.com
-              </span>
-            )}
-          </label>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <TextInput
+            id="email"
+            type="email"
+            labelText="Correo"
+            placeholder="tu@correo.com"
+            required
+            value={email}
+            invalid={touched.email && !emailValid}
+            invalidText="Escribe un correo válido, por ejemplo nombre@correo.com"
+            onChange={(e) => setEmail(e.target.value)}
+            onBlur={() => setTouched((t) => ({ ...t, email: true }))}
+          />
 
-          <label className="flex flex-col gap-1.5">
-            <span className="font-mono text-[10px] font-medium uppercase tracking-[.1em] text-muted">
-              Contraseña
-            </span>
-            <input
-              type="password"
+          <div className="flex flex-col gap-2">
+            <PasswordInput
+              id="password"
+              labelText="Contraseña"
+              placeholder="Mínimo 8 caracteres"
               required
               value={password}
+              invalid={touched.password && !passwordValid}
+              invalidText="Mínimo 8 caracteres."
               onChange={(e) => setPassword(e.target.value)}
               onBlur={() => setTouched((t) => ({ ...t, password: true }))}
-              className={`${inputClass} ${touched.password && !passwordValid ? 'border-status-rechazado' : 'border-line-strong'}`}
-              placeholder="Mínimo 8 caracteres"
+              hidePasswordLabel="Ocultar contraseña"
+              showPasswordLabel="Mostrar contraseña"
             />
-            <div className="mt-0.5 flex gap-1">
+            <div className="flex gap-1">
               {[1, 2, 3].map((bar) => (
                 <span
                   key={bar}
-                  className={`h-[3px] flex-1 ${bar <= strength ? STRENGTH_BAR_COLOR[strength] : 'bg-line'}`}
+                  className="h-[3px] flex-1"
+                  style={{ background: bar <= strength ? STRENGTH_COLOR[strength] : 'var(--cds-border-subtle-01)' }}
                 />
               ))}
             </div>
-            {touched.password && !passwordValid && (
-              <span className="text-[12px] font-medium leading-[1.4] text-status-rechazado-text">
-                Mínimo 8 caracteres.
-              </span>
-            )}
-          </label>
+          </div>
 
-          <label className="flex flex-col gap-1.5">
-            <span className="font-mono text-[10px] font-medium uppercase tracking-[.1em] text-muted">
-              Confirmar contraseña
-            </span>
-            <input
-              type="password"
-              required
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              onBlur={() => setTouched((t) => ({ ...t, confirmPassword: true }))}
-              className={`${inputClass} ${touched.confirmPassword && !confirmValid ? 'border-status-rechazado' : 'border-line-strong'}`}
-              placeholder="Repite la contraseña"
-            />
-            {touched.confirmPassword && !confirmValid && (
-              <span className="text-[12px] font-medium leading-[1.4] text-status-rechazado-text">
-                Las contraseñas no coinciden.
-              </span>
-            )}
-          </label>
+          <PasswordInput
+            id="confirmPassword"
+            labelText="Confirmar contraseña"
+            placeholder="Repite la contraseña"
+            required
+            value={confirmPassword}
+            invalid={touched.confirmPassword && !confirmValid}
+            invalidText="Las contraseñas no coinciden."
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            onBlur={() => setTouched((t) => ({ ...t, confirmPassword: true }))}
+            hidePasswordLabel="Ocultar contraseña"
+            showPasswordLabel="Mostrar contraseña"
+          />
 
-          <button
+          <Button
             type="submit"
             disabled={loading || (Object.values(touched).some(Boolean) && !formValid)}
-            className="mt-1 w-full bg-ink px-4 py-3.5 text-[14px] font-semibold text-white transition-colors hover:bg-ink-2 disabled:opacity-[.45]"
+            className="mt-1 w-full justify-center"
           >
             {loading ? 'Creando cuenta...' : 'Crear cuenta'}
-          </button>
+          </Button>
         </form>
 
-        <span className="text-[13px] text-muted">
-          ¿Ya tienes cuenta?{' '}
-          <Link href="/login" className="text-ink underline underline-offset-2 hover:text-muted">
-            Iniciar sesión
-          </Link>
+        <span className="text-[13px] text-[color:var(--cds-text-secondary)]">
+          ¿Ya tienes cuenta? <Link href="/login" className="cds--link">Iniciar sesión</Link>
         </span>
       </section>
     </main>

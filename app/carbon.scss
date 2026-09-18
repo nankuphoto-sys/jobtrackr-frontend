@@ -1,0 +1,7 @@
+// $css--font-face: false — ya cargamos IBM Plex Sans/Mono vía next/font/google
+// en app/layout.tsx (self-hosted, optimizado por Next); no hace falta que Carbon
+// también intente declarar sus propios @font-face apuntando a rutas de node_modules
+// que webpack no resuelve.
+@use '@carbon/react' with (
+  $css--font-face: false
+);

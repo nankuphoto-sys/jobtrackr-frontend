@@ -1,8 +1,11 @@
 'use client';
 
 import { useDraggable } from '@dnd-kit/core';
+import { Tag, Tile } from '@carbon/react';
+import { Link as LinkIcon, TextAlignLeft } from '@carbon/icons-react';
 import { JobApplication } from '@/lib/types';
-import { STATUS_BORDER_CLASS } from '@/lib/statusStyles';
+import { STATUS_LABELS } from '@/lib/types';
+import { STATUS_TAG_TYPE } from '@/lib/statusStyles';
 
 const MONTHS_ES = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
 
@@ -14,55 +17,32 @@ function formatCardDate(iso: string): string {
   return `${day} ${MONTHS_ES[d.getUTCMonth()]}`;
 }
 
-function LinkIcon() {
-  return (
-    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth={2.2}>
-      <path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1" />
-      <path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1" />
-    </svg>
-  );
-}
-
-function NotesIcon() {
-  return (
-    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth={2.2}>
-      <path d="M4 5h16M4 11h16M4 17h9" />
-    </svg>
-  );
-}
-
 /** Contenido visual puro de la tarjeta, sin hooks de drag — se reutiliza en el DragOverlay. */
 export function CardContent({ app }: { app: JobApplication }) {
   const hasIndicators = Boolean(app.link || app.notes);
 
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex flex-col gap-2">
       <div className="flex items-start justify-between gap-2">
-        <span className="font-semibold text-[14px] leading-[1.25] text-ink">{app.company}</span>
-        <span className="shrink-0 whitespace-nowrap font-mono text-[10px] font-medium leading-[1.4] text-muted">
+        <span className="text-[15px] font-semibold leading-[1.25] text-[color:var(--cds-text-primary)]">
+          {app.company}
+        </span>
+        <span className="shrink-0 whitespace-nowrap font-mono text-[11px] text-[color:var(--cds-text-secondary)]">
           {formatCardDate(app.appliedAt ?? app.createdAt)}
         </span>
       </div>
-      <span className="text-[13px] leading-[1.35] text-ink-3">{app.role}</span>
-      {hasIndicators && (
-        <div className="mt-0.5 flex items-center justify-between gap-2">
-          <div className="flex gap-[5px]">
-            {app.link && (
-              <span className="grid h-[18px] w-[18px] place-items-center border border-line">
-                <LinkIcon />
-              </span>
-            )}
-            {app.notes && (
-              <span className="grid h-[18px] w-[18px] place-items-center border border-line">
-                <NotesIcon />
-              </span>
-            )}
+      <span className="text-[13px] leading-[1.35] text-[color:var(--cds-text-secondary)]">{app.role}</span>
+      <div className="flex items-center justify-between gap-2">
+        <Tag type={STATUS_TAG_TYPE[app.status]} size="sm">
+          {STATUS_LABELS[app.status]}
+        </Tag>
+        {hasIndicators && (
+          <div className="flex items-center gap-2 text-[color:var(--cds-icon-secondary)]">
+            {app.link && <LinkIcon size={16} />}
+            {app.notes && <TextAlignLeft size={16} />}
           </div>
-          <span className="hidden font-mono text-[10px] font-medium uppercase tracking-[.08em] text-muted max-sm:inline">
-            Mover →
-          </span>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
@@ -80,25 +60,19 @@ export function KanbanCard({
     ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)` }
     : undefined;
 
-  const isOferta = app.status === 'OFERTA';
-  const isRechazado = app.status === 'RECHAZADO';
-
   return (
-    <div
+    <Tile
       ref={setNodeRef}
       style={style}
       {...listeners}
       {...attributes}
       onClick={() => onEdit(app)}
       data-testid={`card-${app.id}`}
-      className={[
-        'cursor-grab touch-none border border-line bg-surface p-3 outline-none transition-colors active:cursor-grabbing hover:border-line-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-ink focus-visible:outline-offset-2',
-        isOferta ? `border-l-[3px] ${STATUS_BORDER_CLASS.OFERTA}` : '',
-        isRechazado ? 'opacity-[.72] hover:opacity-100' : '',
-        isDragging ? 'opacity-30' : '',
-      ].join(' ')}
+      className={`cursor-grab touch-none outline-none transition-opacity active:cursor-grabbing focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--cds-focus)] ${
+        isDragging ? 'opacity-30' : ''
+      }`}
     >
       <CardContent app={app} />
-    </div>
+    </Tile>
   );
 }
