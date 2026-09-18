@@ -4,7 +4,7 @@ import { uniqueEmail } from './helpers';
 test('home muestra los botones de iniciar sesión y crear cuenta', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('link', { name: 'Iniciar sesión' })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Crear cuenta' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Crear cuenta gratis' }).first()).toBeVisible();
 });
 
 test('acceder a /applications sin token redirige a /login', async ({ page }) => {

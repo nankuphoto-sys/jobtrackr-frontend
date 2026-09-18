@@ -10,12 +10,15 @@ export function KanbanColumn({
   applications,
   onEdit,
   activeApp,
+  compact = false,
 }: {
   status: ApplicationStatus;
   applications: JobApplication[];
   onEdit: (app: JobApplication) => void;
   /** La postulación que se está arrastrando ahora mismo (en cualquier columna), o null. */
   activeApp: JobApplication | null;
+  /** Preferencia de densidad guardada en Configuración — menos espacio entre tarjetas. */
+  compact?: boolean;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: status });
 
@@ -42,7 +45,7 @@ export function KanbanColumn({
         </span>
       </div>
 
-      <div ref={setNodeRef} className="flex flex-col gap-2">
+      <div ref={setNodeRef} className={compact ? 'flex flex-col gap-1' : 'flex flex-col gap-2'}>
         {applications.map((app) =>
           app.id === activeApp?.id ? (
             // Hueco de origen: mientras se arrastra, la tarjeta original deja este espacio reservado.
@@ -53,7 +56,7 @@ export function KanbanColumn({
             />
           ) : (
             <div key={app.id} className={isValidDropTarget ? 'opacity-50' : ''}>
-              <KanbanCard app={app} onEdit={onEdit} />
+              <KanbanCard app={app} onEdit={onEdit} compact={compact} />
             </div>
           )
         )}

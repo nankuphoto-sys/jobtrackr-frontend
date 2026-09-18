@@ -37,9 +37,25 @@ export interface JobApplication {
 export interface AuthUser {
   id: string;
   email: string;
+  name: string | null;
 }
 
 export interface AuthResponse {
   token: string;
   user: AuthUser;
+}
+
+export interface UserProfile {
+  id: string;
+  email: string;
+  name: string | null;
+  createdAt: string;
+}
+
+export interface StatusChange {
+  id: string;
+  applicationId: string;
+  fromStatus: ApplicationStatus | null;
+  toStatus: ApplicationStatus;
+  changedAt: string;
 }

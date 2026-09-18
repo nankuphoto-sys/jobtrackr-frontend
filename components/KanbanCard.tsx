@@ -50,15 +50,18 @@ export function CardContent({ app }: { app: JobApplication }) {
 export function KanbanCard({
   app,
   onEdit,
+  compact = false,
 }: {
   app: JobApplication;
   onEdit: (app: JobApplication) => void;
+  compact?: boolean;
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: app.id });
 
-  const style = transform
-    ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)` }
-    : undefined;
+  const style = {
+    ...(transform ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)` } : {}),
+    ...(compact ? { padding: '0.5rem' } : {}),
+  };
 
   return (
     <Tile

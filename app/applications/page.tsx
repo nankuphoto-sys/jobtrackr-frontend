@@ -26,9 +26,10 @@ import {
   SkeletonText,
   SkeletonPlaceholder,
 } from '@carbon/react';
-import { Add, Logout, WarningFilled } from '@carbon/icons-react';
+import { Add, Logout, UserAvatar, WarningFilled } from '@carbon/icons-react';
 import { api, ApiError } from '@/lib/api';
 import { getToken, clearToken, getUserEmail } from '@/lib/auth';
+import { getDensity } from '@/lib/density';
 import { APPLICATION_STATUSES, ApplicationStatus, JobApplication, STATUS_LABELS } from '@/lib/types';
 import { computeStats } from '@/lib/stats';
 import { STATUS_ACCENT_COLOR } from '@/lib/statusStyles';
@@ -80,6 +81,7 @@ export default function ApplicationsPage() {
   const [overStatus, setOverStatus] = useState<ApplicationStatus | null>(null);
   const [modalState, setModalState] = useState<ModalState>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [compact, setCompact] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -136,6 +138,7 @@ export default function ApplicationsPage() {
       return;
     }
     setUserEmail(getUserEmail());
+    setCompact(getDensity() === 'densa');
     loadApplications();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]);
@@ -218,6 +221,9 @@ export default function ApplicationsPage() {
           </Button>
         </div>
         <HeaderGlobalBar>
+          <HeaderGlobalAction aria-label="Mi cuenta" onClick={() => router.push('/account')}>
+            <UserAvatar size={20} />
+          </HeaderGlobalAction>
           <HeaderGlobalAction aria-label="Cerrar sesión" onClick={handleLogout}>
             <Logout size={20} />
           </HeaderGlobalAction>
@@ -286,6 +292,7 @@ export default function ApplicationsPage() {
                     applications={applications.filter((a) => a.status === status)}
                     onEdit={(app) => setModalState({ mode: 'edit', app })}
                     activeApp={activeApp}
+                    compact={compact}
                   />
                 </div>
               ))}
