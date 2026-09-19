@@ -60,7 +60,7 @@ function FunnelChart({ applications, history }: { applications: JobApplication[]
                 }}
               >
                 <span className="whitespace-nowrap font-mono text-[11px] font-semibold text-white">
-                  {stage.count} · {stage.pctOfFirst}%
+                  {stage.count} · {stage.pctOfTotal}%
                 </span>
               </div>
             </div>
@@ -134,7 +134,7 @@ export function ReportsTab({
           <span className="font-mono text-[10px] font-medium uppercase tracking-[.1em] text-[color:var(--cds-text-secondary)]">
             Tasa de respuesta
           </span>
-          <span className="font-mono text-[26px] font-semibold" style={{ color: 'var(--cds-support-success)' }}>
+          <span className="font-mono text-[26px] font-semibold text-[color:var(--cds-text-primary)]">
             {responseRate === null ? '—' : `${responseRate}%`}
           </span>
         </div>

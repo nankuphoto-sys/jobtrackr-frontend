@@ -12,11 +12,7 @@ export function StatsBar({ applications }: { applications: JobApplication[] }) {
     >
       <Metric label="Total" value={total} />
       <Metric label="Esta semana" value={thisWeek} />
-      <Metric
-        label="Tasa de respuesta"
-        value={responseRate === null ? '—' : `${responseRate}%`}
-        valueColor="var(--cds-support-success)"
-      />
+      <Metric label="Tasa de respuesta" value={responseRate === null ? '—' : `${responseRate}%`} />
       <div
         className="col-span-2 flex flex-col gap-[9px] px-[18px] py-[14px]"
         style={{ background: 'var(--cds-layer)' }}

@@ -43,8 +43,13 @@ export interface FunnelStage {
   status: ApplicationStatus;
   label: string;
   count: number;
-  /** % respecto de la primera etapa (POR_APLICAR). */
-  pctOfFirst: number;
+  /**
+   * % respecto del total de postulaciones — no de la primera etapa: una
+   * postulación puede crearse directo en un estado avanzado sin pasar por
+   * "Por aplicar", así que una etapa posterior puede tener más casos que la
+   * primera. Usar la primera etapa como base daría porcentajes de más de 100%.
+   */
+  pctOfTotal: number;
 }
 
 export interface FunnelResult {
@@ -76,13 +81,13 @@ export function computeFunnel(applications: JobApplication[], history: StatusCha
   const counts = FUNNEL_STAGES.map(
     (status) => Array.from(reachedByApp.values()).filter((reached) => reached.has(status)).length
   );
-  const first = counts[0] || 1;
+  const total = applications.length || 1;
 
   const stages: FunnelStage[] = FUNNEL_STAGES.map((status, i) => ({
     status,
     label: STATUS_LABELS[status],
     count: counts[i],
-    pctOfFirst: Math.round((counts[i] / first) * 100),
+    pctOfTotal: Math.round((counts[i] / total) * 100),
   }));
 
   const rejected = Array.from(reachedByApp.values()).filter((reached) => reached.has('RECHAZADO')).length;

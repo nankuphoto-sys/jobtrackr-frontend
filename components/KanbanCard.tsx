@@ -1,11 +1,11 @@
 'use client';
 
 import { useDraggable } from '@dnd-kit/core';
-import { Tag, Tile } from '@carbon/react';
+import { Tile } from '@carbon/react';
 import { Link as LinkIcon, TextAlignLeft } from '@carbon/icons-react';
 import { JobApplication } from '@/lib/types';
 import { STATUS_LABELS } from '@/lib/types';
-import { STATUS_TAG_TYPE } from '@/lib/statusStyles';
+import { STATUS_SOFT_BG, STATUS_CHIP_TEXT } from '@/lib/statusStyles';
 
 const MONTHS_ES = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
 
@@ -33,9 +33,12 @@ export function CardContent({ app }: { app: JobApplication }) {
       </div>
       <span className="text-[13px] leading-[1.35] text-[color:var(--cds-text-secondary)]">{app.role}</span>
       <div className="flex items-center justify-between gap-2">
-        <Tag type={STATUS_TAG_TYPE[app.status]} size="sm">
+        <span
+          className="rounded-full px-2 py-0.5 text-[11px] font-semibold leading-[1.4]"
+          style={{ background: STATUS_SOFT_BG[app.status], color: STATUS_CHIP_TEXT[app.status] }}
+        >
           {STATUS_LABELS[app.status]}
-        </Tag>
+        </span>
         {hasIndicators && (
           <div className="flex items-center gap-2 text-[color:var(--cds-icon-secondary)]">
             {app.link && <LinkIcon size={16} />}

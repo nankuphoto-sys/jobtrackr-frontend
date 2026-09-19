@@ -243,11 +243,7 @@ export default function ApplicationsPage() {
             >
               <MobileMetric label="Total" value={applications.length} />
               <MobileMetric label="Semana" value={thisWeek} />
-              <MobileMetric
-                label="Respuesta"
-                value={responseRate === null ? '—' : `${responseRate}%`}
-                valueColor="var(--cds-support-success)"
-              />
+              <MobileMetric label="Respuesta" value={responseRate === null ? '—' : `${responseRate}%`} />
             </div>
           </>
         )}

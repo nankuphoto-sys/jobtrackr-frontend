@@ -3,6 +3,16 @@
 import Link from 'next/link';
 import { Button, Tile } from '@carbon/react';
 import { Dashboard, ChartLine, Mobile, Rocket } from '@carbon/icons-react';
+import { APPLICATION_STATUSES, STATUS_LABELS } from '@/lib/types';
+import { STATUS_ACCENT_COLOR } from '@/lib/statusStyles';
+
+const PREVIEW_COUNTS: Record<string, number> = {
+  POR_APLICAR: 4,
+  APLICADO: 9,
+  ENTREVISTA: 4,
+  OFERTA: 2,
+  RECHAZADO: 5,
+};
 
 const BENEFITS = [
   {
@@ -75,19 +85,18 @@ export default function Home() {
             className="grid grid-cols-5 gap-2 p-4"
             style={{ background: 'var(--cds-layer)' }}
           >
-            {[
-              { label: 'Por aplicar', color: '#8d8d8d', n: 4 },
-              { label: 'Aplicado', color: '#0043ce', n: 9 },
-              { label: 'Entrevista', color: '#6929c4', n: 4 },
-              { label: 'Oferta', color: '#0e6027', n: 2 },
-              { label: 'Rechazado', color: '#a2191f', n: 5 },
-            ].map((col) => (
-              <div key={col.label} className="flex flex-col gap-2">
-                <div className="flex items-center justify-between border-b-2 pb-1.5" style={{ borderColor: col.color }}>
+            {APPLICATION_STATUSES.map((status) => (
+              <div key={status} className="flex flex-col gap-2">
+                <div
+                  className="flex items-center justify-between border-b-2 pb-1.5"
+                  style={{ borderColor: STATUS_ACCENT_COLOR[status] }}
+                >
                   <span className="font-mono text-[9px] font-semibold uppercase tracking-[.06em] text-[color:var(--cds-text-primary)]">
-                    {col.label}
+                    {STATUS_LABELS[status]}
                   </span>
-                  <span className="font-mono text-[9px] text-[color:var(--cds-text-secondary)]">{col.n}</span>
+                  <span className="font-mono text-[9px] text-[color:var(--cds-text-secondary)]">
+                    {PREVIEW_COUNTS[status]}
+                  </span>
                 </div>
                 <div className="h-16 border" style={{ borderColor: 'var(--cds-border-subtle-00)', background: 'var(--cds-background)' }} />
               </div>

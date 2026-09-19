@@ -1,36 +1,35 @@
 import { ApplicationStatus } from './types';
 
-/**
- * Carbon Tag solo trae esta paleta categórica (sin ámbar/naranja), así que
- * "Entrevista" se remapea a purple en vez del ámbar del diseño anterior.
- */
-export type CarbonTagType = 'gray' | 'blue' | 'purple' | 'green' | 'red';
-
-export const STATUS_TAG_TYPE: Record<ApplicationStatus, CarbonTagType> = {
-  POR_APLICAR: 'gray',
-  APLICADO: 'blue',
-  ENTREVISTA: 'purple',
-  OFERTA: 'green',
-  RECHAZADO: 'red',
-};
+export interface StatusPalette {
+  /** Barra bajo la cabecera de columna / borde de 2px en el chip activo. */
+  accent: string;
+  /** Fondo del chip (activo en el modal, siempre en la tarjeta). */
+  bg: string;
+  /** Texto del chip — siempre oscuro, nunca blanco sobre el color pleno. */
+  text: string;
+}
 
 /**
- * Mismos valores que usa <Tag type="..."> de Carbon internamente (ver
- * .cds--tag--{color} en app/carbon.css) — para acentos fuera del propio Tag:
- * borde inferior de columna, zona de destino al arrastrar.
+ * Rampa de temperatura fría → cálida, en el orden del proceso — no son 5
+ * colores sueltos, el orden es parte del significado. Reemplaza la paleta
+ * categórica fija de Carbon (<Tag type="..."> solo trae gray/blue/purple/
+ * green/red, sin ámbar ni naranja): el estado se sigue mostrando con
+ * componentes de Carbon alrededor, pero coloreado a mano con estos tokens.
  */
-export const STATUS_ACCENT_COLOR: Record<ApplicationStatus, string> = {
-  POR_APLICAR: 'var(--cds-tag-color-gray, #161616)',
-  APLICADO: 'var(--cds-tag-color-blue, #0043ce)',
-  ENTREVISTA: 'var(--cds-tag-color-purple, #6929c4)',
-  OFERTA: 'var(--cds-tag-color-green, #0e6027)',
-  RECHAZADO: 'var(--cds-tag-color-red, #a2191f)',
+export const STATUS_PALETTE: Record<ApplicationStatus, StatusPalette> = {
+  POR_APLICAR: { accent: '#94a3b8', bg: '#f1f5f9', text: '#475569' },
+  APLICADO: { accent: '#0891b2', bg: '#ecfeff', text: '#155e75' },
+  ENTREVISTA: { accent: '#ca8a04', bg: '#fefce8', text: '#854d0e' },
+  OFERTA: { accent: '#ea580c', bg: '#fff7ed', text: '#9a3412' },
+  RECHAZADO: { accent: '#9f1239', bg: '#fff1f2', text: '#881337' },
 };
 
-export const STATUS_SOFT_BG: Record<ApplicationStatus, string> = {
-  POR_APLICAR: 'var(--cds-tag-background-gray, #e0e0e0)',
-  APLICADO: 'var(--cds-tag-background-blue, #d0e2ff)',
-  ENTREVISTA: 'var(--cds-tag-background-purple, #e8daff)',
-  OFERTA: 'var(--cds-tag-background-green, #a7f0ba)',
-  RECHAZADO: 'var(--cds-tag-background-red, #ffd7d9)',
-};
+function pluck(key: keyof StatusPalette): Record<ApplicationStatus, string> {
+  return Object.fromEntries(
+    Object.entries(STATUS_PALETTE).map(([status, palette]) => [status, palette[key]])
+  ) as Record<ApplicationStatus, string>;
+}
+
+export const STATUS_ACCENT_COLOR = pluck('accent');
+export const STATUS_SOFT_BG = pluck('bg');
+export const STATUS_CHIP_TEXT = pluck('text');

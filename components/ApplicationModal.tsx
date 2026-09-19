@@ -9,12 +9,11 @@ import {
   ModalFooter,
   TextInput,
   TextArea,
-  Tag,
   InlineNotification,
 } from '@carbon/react';
 import { api, ApiError } from '@/lib/api';
 import { APPLICATION_STATUSES, ApplicationStatus, JobApplication, STATUS_LABELS } from '@/lib/types';
-import { STATUS_TAG_TYPE } from '@/lib/statusStyles';
+import { STATUS_ACCENT_COLOR, STATUS_SOFT_BG, STATUS_CHIP_TEXT } from '@/lib/statusStyles';
 
 function toDateInputValue(iso: string | null): string {
   if (!iso) return '';
@@ -126,21 +125,34 @@ export function ApplicationModal({ app, onClose, onSaved, onDeleted }: Props) {
           <div className="flex flex-col gap-2">
             <span className="cds--label text-[12px] text-[color:var(--cds-text-secondary)]">Estado</span>
             <div className="flex flex-wrap gap-2">
-              {APPLICATION_STATUSES.map((s) => (
-                <Tag
-                  key={s}
-                  as="button"
-                  type={STATUS_TAG_TYPE[s]}
-                  onClick={() => setStatus(s)}
-                  style={
-                    status === s
-                      ? { outline: '2px solid var(--cds-focus)', outlineOffset: '2px' }
-                      : { opacity: 0.55 }
-                  }
-                >
-                  {STATUS_LABELS[s]}
-                </Tag>
-              ))}
+              {APPLICATION_STATUSES.map((s) => {
+                const selected = status === s;
+                return (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => setStatus(s)}
+                    className="font-mono text-[11px] font-semibold uppercase tracking-[.05em] transition-colors"
+                    style={
+                      selected
+                        ? {
+                            border: `2px solid ${STATUS_ACCENT_COLOR[s]}`,
+                            background: STATUS_SOFT_BG[s],
+                            color: STATUS_CHIP_TEXT[s],
+                            padding: '8px 10px',
+                          }
+                        : {
+                            border: '1px solid var(--cds-border-subtle-01)',
+                            background: 'transparent',
+                            color: 'var(--cds-text-secondary)',
+                            padding: '9px 11px',
+                          }
+                    }
+                  >
+                    {STATUS_LABELS[s]}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
