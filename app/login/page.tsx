@@ -7,6 +7,7 @@ import { TextInput, PasswordInput, Button, InlineNotification, InlineLoading } f
 import { api, ApiError } from '@/lib/api';
 import { saveToken, saveUserEmail } from '@/lib/auth';
 import { AuthResponse } from '@/lib/types';
+import { Logo } from '@/components/Logo';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -41,12 +42,7 @@ export default function LoginPage() {
         style={{ borderColor: 'var(--cds-border-subtle-01)', background: 'var(--cds-layer)' }}
       >
         <div className="flex flex-col gap-2.5">
-          <span
-            className="grid h-[26px] w-[26px] place-items-center font-mono text-[13px] font-semibold"
-            style={{ background: 'var(--cds-text-primary)', color: 'var(--cds-background)' }}
-          >
-            J
-          </span>
+          <Logo size={32} />
           <h1 className="text-[22px] font-semibold leading-[1.15] tracking-[-.01em] text-[color:var(--cds-text-primary)]">
             Iniciar sesión
           </h1>

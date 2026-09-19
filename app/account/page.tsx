@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Header, HeaderName, HeaderGlobalBar, HeaderGlobalAction, Tabs, TabList, Tab, TabPanels, TabPanel } from '@carbon/react';
 import { Logout } from '@carbon/icons-react';
 import { api, ApiError } from '@/lib/api';
+import { Logo } from '@/components/Logo';
 import { getToken, clearToken } from '@/lib/auth';
 import { JobApplication, StatusChange, UserProfile } from '@/lib/types';
 import { ProfileTab } from '@/components/account/ProfileTab';
@@ -65,7 +66,10 @@ export default function AccountPage() {
     <div style={{ background: 'var(--cds-background)' }} className="min-h-screen pt-12">
       <Header aria-label="JobTrackr">
         <HeaderName href="/applications" prefix="">
-          JobTrackr
+          <span className="flex items-center gap-2">
+            <Logo size={24} />
+            JobTrackr
+          </span>
         </HeaderName>
         <HeaderGlobalBar>
           <HeaderGlobalAction aria-label="Cerrar sesión" onClick={handleLogout}>

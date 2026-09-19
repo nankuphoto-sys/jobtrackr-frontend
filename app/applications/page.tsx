@@ -28,6 +28,7 @@ import {
 } from '@carbon/react';
 import { Add, Logout, UserAvatar, WarningFilled } from '@carbon/icons-react';
 import { api, ApiError } from '@/lib/api';
+import { Logo } from '@/components/Logo';
 import { getToken, clearToken, getUserEmail } from '@/lib/auth';
 import { getDensity } from '@/lib/density';
 import { APPLICATION_STATUSES, ApplicationStatus, JobApplication, STATUS_LABELS } from '@/lib/types';
@@ -205,7 +206,10 @@ export default function ApplicationsPage() {
       {/* Header de Carbon es position:fixed — pt-12 (48px) en el contenedor compensa su altura. */}
       <Header aria-label="JobTrackr">
         <HeaderName href="/applications" prefix="">
-          JobTrackr
+          <span className="flex items-center gap-2">
+            <Logo size={24} />
+            JobTrackr
+          </span>
         </HeaderName>
         {userEmail && (
           <span

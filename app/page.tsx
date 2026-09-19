@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { APPLICATION_STATUSES, ApplicationStatus, STATUS_LABELS } from '@/lib/types';
+import { Logo } from '@/components/Logo';
 import { STATUS_ACCENT_COLOR, STATUS_SOFT_BG, STATUS_CHIP_TEXT } from '@/lib/statusStyles';
 
 const INK = '#111827';
@@ -76,16 +77,6 @@ function Eyebrow({
   );
 }
 
-function BrandMark({ size = 22 }: { size?: number }) {
-  return (
-    <span
-      className="grid place-items-center font-mono font-semibold text-white"
-      style={{ width: size, height: size, background: INK, fontSize: size * 0.545, lineHeight: `${size}px` }}
-    >
-      J
-    </span>
-  );
-}
 
 export default function Home() {
   return (
@@ -97,7 +88,7 @@ export default function Home() {
           style={{ borderColor: LINE }}
         >
           <span className="flex items-center gap-2.5">
-            <BrandMark />
+            <Logo size={32} />
             <span className="text-[15px] font-semibold leading-none tracking-[-.01em]">JobTrackr</span>
           </span>
           <span className="flex flex-wrap items-center gap-[18px]">
@@ -280,7 +271,7 @@ export default function Home() {
           >
             <div className="flex flex-wrap items-center justify-between gap-3 border-b px-4 py-[11px]" style={{ borderColor: LINE }}>
               <span className="flex items-center gap-2">
-                <BrandMark size={18} />
+                <Logo size={18} />
                 <span className="text-[13px] font-semibold leading-none">Mi tablero</span>
               </span>
               <span className="flex flex-wrap gap-4">
@@ -498,7 +489,7 @@ export default function Home() {
         {/* PIE */}
         <footer className="flex flex-wrap items-center justify-between gap-4 px-7 py-[26px]">
           <span className="flex items-center gap-2.5">
-            <BrandMark size={20} />
+            <Logo size={20} />
             <span className="text-[13px] font-medium" style={{ color: INK_3 }}>
               JobTrackr · 2026
             </span>
