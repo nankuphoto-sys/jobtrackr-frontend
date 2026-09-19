@@ -33,7 +33,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="es" className={`${plexSans.variable} ${plexMono.variable}`}>
+    <html lang="es" className={`${plexSans.variable} ${plexMono.variable} scroll-smooth`}>
       <body className="font-sans antialiased">
         <Theme theme="white" className="min-h-screen">
           {children}
