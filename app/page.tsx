@@ -53,10 +53,22 @@ const FAQ: { q: string; a: string }[] = [
   },
 ];
 
-function Eyebrow({ children, onGray = false }: { children: React.ReactNode; onGray?: boolean }) {
+// Duraciones primas entre sí a propósito: el conjunto tarda mucho en repetir la misma
+// configuración y nunca se percibe un bucle. No redondear a un valor común.
+const HERO_RISE_SECONDS = [13, 15, 11, 17, 14];
+
+function Eyebrow({
+  children,
+  onGray = false,
+  className = '',
+}: {
+  children: React.ReactNode;
+  onGray?: boolean;
+  className?: string;
+}) {
   return (
     <span
-      className="font-mono text-[11px] font-medium uppercase leading-none tracking-[.14em]"
+      className={`font-mono text-[11px] font-medium uppercase leading-none tracking-[.14em] ${className}`}
       style={{ color: onGray ? INK_3 : MUTED }}
     >
       {children}
@@ -113,19 +125,61 @@ export default function Home() {
         </nav>
 
         {/* HERO */}
-        <div className="flex flex-col items-center gap-6 px-7 pb-[78px] pt-[86px] text-center">
-          <Eyebrow>Gratis · sin tarjeta</Eyebrow>
+        <div className="relative flex flex-col items-center gap-[26px] overflow-hidden px-7 pb-[78px] pt-[86px] text-center">
+          {/* Fondo animado (decorativo). Orden del DOM, sin z-index: el contenido lleva `relative`. */}
+          <div
+            aria-hidden="true"
+            data-om-anim
+            className="pointer-events-none absolute bottom-0 top-0"
+            style={{
+              left: -80,
+              right: -80,
+              background: 'repeating-linear-gradient(90deg, #e5e7eb 0, #e5e7eb 1px, transparent 1px, transparent 72px)',
+              opacity: 0.5,
+              animation: 'om-drift 26s linear infinite',
+            }}
+          />
+          {/* left/right 28px y gap 3px replican la franja de rampa de abajo: cada columna cae sobre su segmento. */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute bottom-0 left-7 right-7 flex gap-[3px]"
+            style={{ height: '52%' }}
+          >
+            {APPLICATION_STATUSES.map((status, i) => (
+              <span
+                key={status}
+                data-om-anim
+                className="flex-1"
+                style={{
+                  opacity: 0.17,
+                  transformOrigin: 'bottom',
+                  background: `linear-gradient(to top, ${STATUS_ACCENT_COLOR[status]}, transparent)`,
+                  animation: `om-rise-${i + 1} ${HERO_RISE_SECONDS[i]}s ease-in-out infinite alternate`,
+                }}
+              />
+            ))}
+          </div>
+          {/* Viñeta: deja el centro en blanco puro y sostiene el contraste del H1 y el párrafo. */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0"
+            style={{
+              background:
+                'radial-gradient(60% 55% at 50% 38%, #fff 42%, rgba(255,255,255,.72) 68%, rgba(255,255,255,0) 100%)',
+            }}
+          />
+          <Eyebrow className="relative !tracking-[.16em]">Gratis · sin tarjeta</Eyebrow>
           <h1
-            className="m-0 max-w-[19ch] text-balance font-semibold"
+            className="relative m-0 max-w-[19ch] text-balance font-semibold"
             style={{ fontSize: 'clamp(38px,6.4vw,76px)', lineHeight: 1.02, letterSpacing: '-.035em' }}
           >
             Deja de buscar en qué correo quedó esa vacante.
           </h1>
-          <p className="m-0 max-w-[52ch] text-pretty text-[17px] leading-[1.55]" style={{ color: INK_2 }}>
+          <p className="relative m-0 max-w-[52ch] text-pretty text-[17px] leading-[1.55]" style={{ color: INK_2 }}>
             Un tablero para todas tus postulaciones. Arrastra cada vacante entre cinco estados y sabe en un vistazo
             dónde estás parado.
           </p>
-          <span className="flex flex-wrap justify-center gap-2.5">
+          <span className="relative flex flex-wrap justify-center gap-2.5">
             <Link
               href="/register"
               className="px-6 py-[15px] text-[14px] font-semibold text-white transition-colors hover:bg-[#374151]"

@@ -1,3 +1,33 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Fondo animado del hero de la landing — solo transform, corre en el compositor. */
+@keyframes om-drift {
+  from { transform: translateX(0); }
+  to { transform: translateX(-72px); }
+}
+@keyframes om-rise-1 {
+  from { transform: translateY(0) scaleY(1); }
+  to { transform: translateY(24%) scaleY(.8); }
+}
+@keyframes om-rise-2 {
+  from { transform: translateY(8%) scaleY(.92); }
+  to { transform: translateY(0) scaleY(1); }
+}
+@keyframes om-rise-3 {
+  from { transform: translateY(0) scaleY(.88); }
+  to { transform: translateY(30%) scaleY(.76); }
+}
+@keyframes om-rise-4 {
+  from { transform: translateY(14%) scaleY(.82); }
+  to { transform: translateY(0) scaleY(1); }
+}
+@keyframes om-rise-5 {
+  from { transform: translateY(0) scaleY(1); }
+  to { transform: translateY(20%) scaleY(.84); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-om-anim] { animation: none !important; }
+}
