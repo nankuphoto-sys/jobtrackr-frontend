@@ -69,7 +69,7 @@ export default function AccountPage() {
         </HeaderName>
         <HeaderGlobalBar>
           <HeaderGlobalAction aria-label="Cerrar sesión" onClick={handleLogout}>
-            <Logout size={20} />
+            <Logout size={20} className="jt-icon jt-icon-logout" />
           </HeaderGlobalAction>
         </HeaderGlobalBar>
       </Header>

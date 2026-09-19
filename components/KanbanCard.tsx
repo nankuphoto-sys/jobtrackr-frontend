@@ -41,8 +41,8 @@ export function CardContent({ app }: { app: JobApplication }) {
         </span>
         {hasIndicators && (
           <div className="flex items-center gap-2 text-[color:var(--cds-icon-secondary)]">
-            {app.link && <LinkIcon size={16} />}
-            {app.notes && <TextAlignLeft size={16} />}
+            {app.link && <LinkIcon size={16} className="jt-icon jt-icon-link" />}
+            {app.notes && <TextAlignLeft size={16} className="jt-icon jt-icon-notes" />}
           </div>
         )}
       </div>

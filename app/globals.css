@@ -31,3 +31,50 @@
 @media (prefers-reduced-motion: reduce) {
   [data-om-anim] { animation: none !important; }
 }
+
+/* Micro-animaciones de íconos (Carbon). Solo transform/opacity; se apagan con movimiento reducido. */
+.jt-icon,
+.cds--btn .cds--btn__icon {
+  transition: transform 160ms ease-out;
+  transform-origin: center;
+}
+/* "+" de los botones: gira un cuarto de vuelta */
+.cds--btn:hover .cds--btn__icon,
+.cds--btn:focus-visible .cds--btn__icon {
+  transform: rotate(90deg);
+}
+/* Header: avatar crece, logout se desplaza hacia la salida */
+.cds--header__action:hover .jt-icon-avatar,
+.cds--header__action:focus-visible .jt-icon-avatar {
+  transform: scale(1.15);
+}
+.cds--header__action:hover .jt-icon-logout,
+.cds--header__action:focus-visible .jt-icon-logout {
+  transform: translateX(3px);
+}
+/* Tarjeta: link se inclina, notas se agrandan al pasar el mouse por la tarjeta */
+.cds--tile:hover .jt-icon-link {
+  transform: rotate(-18deg) scale(1.1);
+}
+.cds--tile:hover .jt-icon-notes {
+  transform: translateY(-2px) scale(1.1);
+}
+/* Alerta de error: pulso suave continuo */
+@keyframes jt-icon-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.1); opacity: .8; }
+}
+.jt-icon-warning {
+  animation: jt-icon-pulse 2.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jt-icon,
+  .cds--btn .cds--btn__icon { transition: none; }
+  .cds--btn:hover .cds--btn__icon,
+  .cds--btn:focus-visible .cds--btn__icon,
+  .cds--header__action:hover .jt-icon,
+  .cds--header__action:focus-visible .jt-icon,
+  .cds--tile:hover .jt-icon { transform: none; }
+  .jt-icon-warning { animation: none; }
+}

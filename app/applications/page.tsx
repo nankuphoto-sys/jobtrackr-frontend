@@ -222,10 +222,10 @@ export default function ApplicationsPage() {
         </div>
         <HeaderGlobalBar>
           <HeaderGlobalAction aria-label="Mi cuenta" onClick={() => router.push('/account')}>
-            <UserAvatar size={20} />
+            <UserAvatar size={20} className="jt-icon jt-icon-avatar" />
           </HeaderGlobalAction>
           <HeaderGlobalAction aria-label="Cerrar sesión" onClick={handleLogout}>
-            <Logout size={20} />
+            <Logout size={20} className="jt-icon jt-icon-logout" />
           </HeaderGlobalAction>
         </HeaderGlobalBar>
       </Header>
@@ -380,7 +380,7 @@ function LoadingSkeleton() {
 function ErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
     <div className="flex flex-col items-center gap-4 px-6 py-11 text-center">
-      <WarningFilled size={36} style={{ color: 'var(--cds-support-error)' }} />
+      <WarningFilled size={36} className="jt-icon-warning" style={{ color: 'var(--cds-support-error)' }} />
       <div className="flex flex-col gap-2">
         <span className="text-[17px] font-semibold leading-[1.25] text-[color:var(--cds-text-primary)]">
           No pudimos cargar el tablero
