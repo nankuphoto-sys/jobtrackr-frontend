@@ -100,6 +100,17 @@ function fromHook(ev) {
     return null;
   }
 
+  if (name === 'PostToolUseFailure') {
+    const detalle = clip(ev.error ?? ev.tool_response?.error, 300);
+    if (ev.tool_name === 'Bash') {
+      return { ...base, type: 'accion', herramienta: 'Bash', comando: clip(input.command), resultado: 'error', detalle };
+    }
+    if (ev.tool_name === 'Edit' || ev.tool_name === 'Write') {
+      return { ...base, type: 'accion', herramienta: ev.tool_name, archivo: input.file_path, resultado: 'error', detalle };
+    }
+    return null;
+  }
+
   if (name === 'SubagentStop') {
     return { ...base, type: 'subagente', subagente: ev.agent_type, mensaje_final: clip(ev.last_assistant_message, 1500) };
   }
