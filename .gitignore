@@ -13,3 +13,6 @@ coverage
 
 # generado por `npm run carbon:css` a partir de app/carbon.scss
 app/carbon.css
+
+# registro de auditoría del agente (contiene prompts y salidas de comandos)
+.claude/audit/

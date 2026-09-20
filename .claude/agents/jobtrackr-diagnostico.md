@@ -56,3 +56,7 @@ Responde en español, sin relleno, con esta estructura fija:
 **Riesgos y pendientes:** otros archivos con el mismo patrón, efectos colaterales, y cualquier punto que **requiere aprobación** (migración, producción, datos).
 
 Si el reporte es ambiguo y no puedes acotarlo sin más datos, dilo en una línea y lista exactamente qué necesitas (pasos, captura, mensaje de consola).
+
+## Auditoría
+
+No escribas en el registro de auditoría: eso lo hace el agente principal. Sí deja en tu respuesta lo necesario para que él lo rellene (`causa_raiz`, `alternativas_descartadas`, `verificacion`, `no_verificado`), tal como pide el formato de arriba.
