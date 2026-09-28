@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { APPLICATION_STATUSES, ApplicationStatus, STATUS_LABELS } from '@/lib/types';
 import { Logo } from '@/components/Logo';
@@ -78,31 +79,61 @@ function Eyebrow({
 }
 
 
+/** true una vez que la página se desplazó unos píxeles — para darle sombra al nav sticky. */
+function useScrolled(threshold = 8) {
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    // React descarta el setState si el booleano no cambió, así que no hay re-render por cada evento.
+    const onScroll = () => setScrolled(window.scrollY > threshold);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [threshold]);
+  return scrolled;
+}
+
 export default function Home() {
+  const scrolled = useScrolled();
+
   return (
     <main className="flex justify-center px-5 pb-16 pt-7" style={{ background: '#f3f4f6' }}>
+      <a
+        href="#contenido"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:bg-white focus:px-4 focus:py-3 focus:text-[14px] focus:font-semibold focus:outline focus:outline-2"
+      >
+        Saltar al contenido
+      </a>
       <div className="w-full max-w-[1180px] border bg-white" style={{ borderColor: LINE_STRONG }}>
-        {/* NAV */}
-        <nav
-          className="flex flex-wrap items-center justify-between gap-4 border-b px-7 py-4"
-          style={{ borderColor: LINE }}
+        {/* NAV — sticky: "Crear cuenta" queda a un toque mientras se lee la página.
+            La sombra aparece solo al desplazarse, para separarlo del contenido que pasa por debajo. */}
+        <header
+          className="sticky top-0 z-20 flex items-center justify-between gap-3 border-b bg-white px-4 py-4 transition-shadow duration-200 sm:gap-4 sm:px-7"
+          style={{
+            borderColor: LINE,
+            boxShadow: scrolled ? '0 6px 16px -8px rgba(17,24,39,.18)' : 'none',
+          }}
         >
           <span className="flex items-center gap-2.5">
             <Logo size={32} />
             <span className="text-[15px] font-semibold leading-none tracking-[-.01em]">JobTrackr</span>
           </span>
-          <span className="flex flex-wrap items-center gap-[18px]">
-            <a href="#como" className="text-[13px] font-medium no-underline transition-colors hover:text-[#111827]" style={{ color: INK_3 }}>
-              Cómo funciona
-            </a>
-            <a href="#estados" className="text-[13px] font-medium no-underline transition-colors hover:text-[#111827]" style={{ color: INK_3 }}>
-              Estados
-            </a>
-            <a href="#precio" className="text-[13px] font-medium no-underline transition-colors hover:text-[#111827]" style={{ color: INK_3 }}>
-              Precio
-            </a>
-            <span className="h-[18px] w-px" style={{ background: LINE }} />
-            <Link href="/login" className="text-[13px] font-medium transition-colors hover:text-[#111827]" style={{ color: INK_3 }}>
+          <span className="flex items-center gap-3 sm:gap-[18px]">
+            {/* En mobile se ocultan los links a secciones: bajando se llega igual, y así el nav
+                entra en una sola fila con lo que importa (Entrar / Crear cuenta). */}
+            <nav aria-label="Secciones" className="hidden items-center gap-[18px] sm:flex">
+              <a href="#como" className="text-[13px] font-medium no-underline transition-colors hover:text-[#111827]" style={{ color: INK_3 }}>
+                Cómo funciona
+              </a>
+              <a href="#estados" className="text-[13px] font-medium no-underline transition-colors hover:text-[#111827]" style={{ color: INK_3 }}>
+                Estados
+              </a>
+              <a href="#precio" className="text-[13px] font-medium no-underline transition-colors hover:text-[#111827]" style={{ color: INK_3 }}>
+                Precio
+              </a>
+              <span aria-hidden="true" className="h-[18px] w-px" style={{ background: LINE }} />
+            </nav>
+            {/* py-2.5 agranda el área táctil sin cambiar cómo se ve */}
+            <Link href="/login" className="py-2.5 text-[13px] font-medium transition-colors hover:text-[#111827]" style={{ color: INK_3 }}>
               Entrar
             </Link>
             <Link
@@ -113,10 +144,10 @@ export default function Home() {
               Crear cuenta
             </Link>
           </span>
-        </nav>
+        </header>
 
         {/* HERO */}
-        <div className="relative flex flex-col items-center gap-[26px] overflow-hidden px-7 pb-[78px] pt-[86px] text-center">
+        <div id="contenido" className="relative flex flex-col items-center gap-[26px] overflow-hidden px-7 pb-[78px] pt-[86px] text-center">
           {/* Fondo animado (decorativo). Orden del DOM, sin z-index: el contenido lleva `relative`. */}
           <div
             aria-hidden="true"
@@ -205,7 +236,7 @@ export default function Home() {
         </div>
 
         {/* CÓMO FUNCIONA */}
-        <section id="como" className="flex flex-col gap-8 border-t px-7 py-16" style={{ borderColor: LINE }}>
+        <section id="como" className="scroll-mt-20 flex flex-col gap-8 border-t px-7 py-16" style={{ borderColor: LINE }}>
           <div className="flex flex-col gap-2.5">
             <Eyebrow>Cómo funciona</Eyebrow>
             <h2
@@ -347,7 +378,7 @@ export default function Home() {
         </section>
 
         {/* LOS CINCO ESTADOS */}
-        <section id="estados" className="flex flex-col gap-[30px] border-t px-7 py-16" style={{ borderColor: LINE }}>
+        <section id="estados" className="scroll-mt-20 flex flex-col gap-[30px] border-t px-7 py-16" style={{ borderColor: LINE }}>
           <div className="flex flex-col gap-2.5">
             <Eyebrow>Los estados</Eyebrow>
             <h2
@@ -380,7 +411,7 @@ export default function Home() {
         {/* PRECIO */}
         <section
           id="precio"
-          className="grid grid-cols-1 items-center gap-[26px] border-t px-7 py-16 [grid-template-columns:repeat(auto-fit,minmax(290px,1fr))]"
+          className="scroll-mt-20 grid grid-cols-1 items-center gap-[26px] border-t px-7 py-16 [grid-template-columns:repeat(auto-fit,minmax(290px,1fr))]"
           style={{ borderColor: LINE, background: '#fafafa' }}
         >
           <div className="flex flex-col gap-3">

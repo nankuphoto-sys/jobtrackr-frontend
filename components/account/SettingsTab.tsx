@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { PasswordInput, Button, InlineNotification, RadioButtonGroup, RadioButton } from '@carbon/react';
 import { Density, getDensity, saveDensity } from '@/lib/density';
+import { useStoredValue } from '@/lib/useStoredValue';
 
 function PasswordSection({ onChangePassword }: { onChangePassword: (current: string, next: string) => Promise<void> }) {
   const [currentPassword, setCurrentPassword] = useState('');
@@ -79,13 +80,8 @@ function PasswordSection({ onChangePassword }: { onChangePassword: (current: str
 }
 
 function DensitySection() {
-  const [density, setDensity] = useState<Density>('comoda');
-
-  // Se lee en un efecto (no en el useState inicial) para que el primer render
-  // del cliente coincida con el HTML del servidor — localStorage no existe ahí.
-  useEffect(() => {
-    setDensity(getDensity());
-  }, []);
+  // En el servidor vale 'comoda' (localStorage no existe ahí); en el cliente, lo guardado.
+  const density = useStoredValue(getDensity, 'comoda');
 
   return (
     <section className="flex flex-col gap-4">
@@ -94,11 +90,7 @@ function DensitySection() {
         legendText="Cómo se ven las tarjetas en el tablero"
         name="density"
         valueSelected={density}
-        onChange={(value) => {
-          const next = value as Density;
-          setDensity(next);
-          saveDensity(next);
-        }}
+        onChange={(value) => saveDensity(value as Density)}
       >
         <RadioButton id="density-comoda" labelText="Cómoda — más espacio entre tarjetas" value="comoda" />
         <RadioButton id="density-densa" labelText="Densa — el doble de vacantes sin hacer scroll" value="densa" />

@@ -32,7 +32,10 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     // expiró o dejó de ser válido (no una contraseña incorrecta en login).
     if (res.status === 401 && !path.startsWith('/auth') && typeof window !== 'undefined') {
       clearToken();
+      // Recarga completa a propósito: api.ts no es un componente (no tiene router) y
+      // así además se descarta todo el estado en memoria de la sesión vencida.
       if (window.location.pathname !== '/login') {
+        // eslint-disable-next-line @next/next/no-location-assign-relative-destination
         window.location.href = '/login';
       }
     }

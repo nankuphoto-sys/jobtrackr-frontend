@@ -41,7 +41,18 @@ Enfoque de aprendizaje: Jonta está aprendiendo a programar mientras construye e
 
 9. **Pulido post-Fase 5 — Tipos de React.** ✅ Completado. `@types/react` había quedado en v18 desde antes de migrar a React 19 (Fase 2), y `@types/react-dom` nunca se instaló. No rompía nada, pero podía dar tipos sutilmente incorrectos. Corregido.
 
+10. **Pulido post-Fase 5 — Rediseño de headers.** ✅ Completado.
+    - App logueada: el header estaba copiado en `/applications` y `/account` y ya se había desincronizado; ahora es un solo `components/AppHeader.tsx`. Prioridad: logo → "Nueva postulación" (acción principal, también desde `/account` vía `/applications?nueva=1`) → avatar. "Cerrar sesión" dejó de ser un ícono suelto (se usa poco y un toque accidental te saca de la app): vive en un panel del avatar junto al email y "Mi cuenta", que se cierra con click afuera o Escape (devolviendo el foco). Header fijo siempre visible — en una herramienta la acción principal no se esconde al hacer scroll. Skip link "Saltar al contenido" y `aria-current` en la página actual. Detalle de Carbon: el `HeaderPanel` cerrado solo queda en ancho 0, así que su contenido se monta solo cuando está abierto (si no, era alcanzable con Tab sin verse).
+    - Landing: nav sticky con sombra solo tras hacer scroll; en mobile se ocultan los links a secciones para que entre en una fila (Entrar / Crear cuenta); `scroll-mt-20` en las secciones para que el título no quede tapado por el header; `scroll-smooth` solo con `motion-safe`.
+    - Nuevo e2e `e2e/header.spec.ts` (panel, Escape, logout, crear desde /account).
+
+11. **Pulido post-Fase 5 — Lint y tipos generados.** ✅ Completado.
+    - `npm run lint` nunca funcionó: ESLint no estaba instalado y Next 16 además quitó `next lint`. Ahora ESLint 9 + `eslint-config-next` con flat config (`eslint.config.mjs`), y corre en CI. El primer lint encontró 3 errores `react-hooks/set-state-in-effect` (leer localStorage en un `useEffect` y copiarlo a un `useState`); se resolvieron con `lib/useStoredValue.ts`, basado en `useSyncExternalStore`, que es cómo React recomienda leer fuentes externas sin hydration mismatch.
+    - `next-env.d.ts` salió de git: `next dev` y `next build` lo reescriben con rutas distintas y siempre aparecía modificado. Se regenera con `npm run typecheck` (`next typegen && tsc --noEmit`), que es lo que corre CI.
+
 ## Pendiente (no hecho todavía)
+
+- **⚠️ Separar la base de desarrollo de la de producción.** Comprobado (2026-09-28): el `DATABASE_URL` del `.env` local del backend es la misma base Neon que usa producción en Render — un usuario creado por los e2e en local pudo loguearse contra la API de producción. Todo lo que se corre en local (e2e, tests del backend, `npm run dev`) escribe en producción. Hoy no hay usuarios reales (142 usuarios, todos de test `@jobtrackr.dev`, porque los e2e no limpian lo que crean). Arreglo: crear un branch `dev` en Neon y apuntar el `.env` local ahí (Render sigue en `main`). Después: borrar los usuarios de test de producción (con OK de Jonta) y no correr e2e en local hasta entonces. CI no está afectado (usa un Postgres efímero).
 
 - **Dominio propio**: Jonta ya tiene un dominio comprado (lo usa para otro proyecto, "RIME") y preguntó si se puede reusar para JobTrackr — sí, vía subdominio (ej. `jobtrackr.sudominio.com` para el frontend, sin tocar lo que ya tiene en la raíz). Falta que confirme el nombre exacto del dominio para configurar los registros DNS en Vercel/Render.
 - Publicar el link en LinkedIn/GitHub — le corresponde a Jonta.

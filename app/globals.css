@@ -32,6 +32,40 @@
   [data-om-anim] { animation: none !important; }
 }
 
+/* Panel de cuenta del header: Carbon lo hace de alto completo; con dos opciones
+   alcanza con un desplegable del tamaño de su contenido. */
+.cds--header-panel.jt-account-panel {
+  inset-block-end: auto;
+}
+.cds--header-panel--expanded.jt-account-panel {
+  border-block-end: 1px solid var(--cds-border-subtle);
+  box-shadow: 0 8px 20px rgba(17, 24, 39, .08);
+}
+.jt-panel-item {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  width: 100%;
+  min-height: 48px; /* objetivo táctil cómodo */
+  padding: 0 1rem;
+  font-size: 14px;
+  text-align: start;
+  text-decoration: none;
+  color: var(--cds-text-primary);
+  transition: background-color 110ms ease-out;
+}
+.jt-panel-item:hover {
+  background: var(--cds-layer-hover);
+}
+.jt-panel-item:focus-visible {
+  outline: 2px solid var(--cds-focus);
+  outline-offset: -2px;
+}
+.jt-panel-item[aria-current='page'] {
+  font-weight: 600;
+  box-shadow: inset 3px 0 0 var(--cds-interactive);
+}
+
 /* Micro-animaciones de íconos (Carbon). Solo transform/opacity; se apagan con movimiento reducido. */
 .jt-icon,
 .cds--btn .cds--btn__icon {
@@ -48,8 +82,8 @@
 .cds--header__action:focus-visible .jt-icon-avatar {
   transform: scale(1.15);
 }
-.cds--header__action:hover .jt-icon-logout,
-.cds--header__action:focus-visible .jt-icon-logout {
+.jt-panel-item:hover .jt-icon-logout,
+.jt-panel-item:focus-visible .jt-icon-logout {
   transform: translateX(3px);
 }
 /* Tarjeta: link se inclina, notas se agrandan al pasar el mouse por la tarjeta */
@@ -75,6 +109,8 @@
   .cds--btn:focus-visible .cds--btn__icon,
   .cds--header__action:hover .jt-icon,
   .cds--header__action:focus-visible .jt-icon,
+  .jt-panel-item:hover .jt-icon,
+  .jt-panel-item:focus-visible .jt-icon,
   .cds--tile:hover .jt-icon { transform: none; }
   .jt-icon-warning { animation: none; }
 }
