@@ -2,6 +2,8 @@
 
 ## Registro de auditoría
 
+Flujo completo del agente: `docs/flujo-agente.md`.
+
 Los hooks de `.claude/settings.json` registran solos el qué (prompts, ediciones, comandos, acciones de riesgo) en `.claude/audit/*.jsonl`. El porqué lo escribes tú.
 
 Tras cada cambio no trivial (arreglo, commit, push, migración), deja un registro:

@@ -1,3 +1,4 @@
+import { appendFileSync } from 'node:fs';
 import { APIRequestContext, Locator, Page } from '@playwright/test';
 
 export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
@@ -16,7 +17,17 @@ export async function registerTestUser(
     data: { email, password: 'secret123' },
   });
   const { token } = await res.json();
+  trackForCleanup(token);
   return { email, token };
+}
+
+/**
+ * Anota un usuario de test para que global-teardown lo borre al terminar.
+ * Si un test le cambia la contraseña, debe volver a llamarla con la nueva.
+ */
+export function trackForCleanup(token: string, password = 'secret123') {
+  const file = process.env.E2E_CLEANUP_FILE;
+  if (file) appendFileSync(file, `${JSON.stringify({ token, password })}\n`);
 }
 
 /** Deja al usuario "logueado" seteando el token en localStorage, igual que hace la app tras un login real. */

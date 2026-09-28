@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { uniqueEmail } from './helpers';
+import { uniqueEmail, trackForCleanup } from './helpers';
 
 test('home muestra los botones de iniciar sesión y crear cuenta', async ({ page }) => {
   await page.goto('/');
@@ -25,6 +25,7 @@ test('registro exitoso guarda el token y redirige a /applications', async ({ pag
   await expect(page).toHaveURL(/\/applications$/);
   const token = await page.evaluate(() => localStorage.getItem('jobtrackr_token'));
   expect(token).toBeTruthy();
+  trackForCleanup(token!);
 });
 
 test('registro con contraseñas distintas no llama al backend', async ({ page }) => {
