@@ -1,3 +1,5 @@
+import { notifyStoredValueChange } from '@/lib/useStoredValue';
+
 export type Density = 'comoda' | 'densa';
 
 const DENSITY_KEY = 'jobtrackr_density';
@@ -9,4 +11,5 @@ export function getDensity(): Density {
 
 export function saveDensity(density: Density) {
   localStorage.setItem(DENSITY_KEY, density);
+  notifyStoredValueChange();
 }

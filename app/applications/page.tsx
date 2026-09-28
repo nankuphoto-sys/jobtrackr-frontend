@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   DndContext,
-  DragCancelEvent,
   DragEndEvent,
   DragOverEvent,
   DragOverlay,
@@ -17,20 +16,17 @@ import {
   useSensors,
 } from '@dnd-kit/core';
 import {
-  Header,
-  HeaderName,
-  HeaderGlobalBar,
-  HeaderGlobalAction,
   Button,
   InlineNotification,
   SkeletonText,
   SkeletonPlaceholder,
 } from '@carbon/react';
-import { Add, Logout, UserAvatar, WarningFilled } from '@carbon/icons-react';
+import { Add, WarningFilled } from '@carbon/icons-react';
 import { api, ApiError } from '@/lib/api';
-import { Logo } from '@/components/Logo';
-import { getToken, clearToken, getUserEmail } from '@/lib/auth';
+import { AppHeader, MAIN_CONTENT_ID } from '@/components/AppHeader';
+import { getToken } from '@/lib/auth';
 import { getDensity } from '@/lib/density';
+import { useStoredValue } from '@/lib/useStoredValue';
 import { APPLICATION_STATUSES, ApplicationStatus, JobApplication, STATUS_LABELS } from '@/lib/types';
 import { computeStats } from '@/lib/stats';
 import { STATUS_ACCENT_COLOR } from '@/lib/statusStyles';
@@ -81,8 +77,7 @@ export default function ApplicationsPage() {
   const [activeApp, setActiveApp] = useState<JobApplication | null>(null);
   const [overStatus, setOverStatus] = useState<ApplicationStatus | null>(null);
   const [modalState, setModalState] = useState<ModalState>(null);
-  const [userEmail, setUserEmail] = useState<string | null>(null);
-  const [compact, setCompact] = useState(false);
+  const compact = useStoredValue(getDensity, 'comoda') === 'densa';
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -123,14 +118,24 @@ export default function ApplicationsPage() {
     },
   };
 
-  function loadApplications() {
-    setLoading(true);
-    setLoadError(null);
+  // Solo actualiza el estado en los callbacks de la promesa (asíncronos), así se
+  // puede llamar desde el efecto de montaje sin renders en cascada.
+  function fetchApplications({ openCreate = false } = {}) {
     api
       .get<JobApplication[]>('/applications')
-      .then(setApplications)
+      .then((apps) => {
+        setApplications(apps);
+        if (openCreate) setModalState({ mode: 'create' });
+      })
       .catch((err) => setLoadError(err instanceof ApiError ? err.message : 'No se pudo conectar con el servidor'))
       .finally(() => setLoading(false));
+  }
+
+  /** Botón "Reintentar": vuelve al estado de carga y pide de nuevo. */
+  function retryLoad() {
+    setLoading(true);
+    setLoadError(null);
+    fetchApplications();
   }
 
   useEffect(() => {
@@ -138,16 +143,13 @@ export default function ApplicationsPage() {
       router.replace('/login');
       return;
     }
-    setUserEmail(getUserEmail());
-    setCompact(getDensity() === 'densa');
-    loadApplications();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // "Nueva postulación" desde otra página (p. ej. /account) llega como ?nueva=1:
+    // el modal se abre una vez cargado el tablero, y se limpia la URL para que
+    // recargar no lo vuelva a abrir.
+    const openCreate = new URLSearchParams(window.location.search).has('nueva');
+    if (openCreate) router.replace('/applications');
+    fetchApplications({ openCreate }); // `loading` ya arranca en true: no hace falta setearlo acá.
   }, [router]);
-
-  function handleLogout() {
-    clearToken();
-    router.push('/login');
-  }
 
   async function handleStatusChange(id: string, status: ApplicationStatus) {
     setActionError(null);
@@ -193,7 +195,7 @@ export default function ApplicationsPage() {
     handleStatusChange(app.id, newStatus);
   }
 
-  function handleDragCancel(_event: DragCancelEvent) {
+  function handleDragCancel() {
     setActiveApp(null);
     setOverStatus(null);
   }
@@ -204,37 +206,9 @@ export default function ApplicationsPage() {
   return (
     <div style={{ background: 'var(--cds-background)' }} className="min-h-screen pb-24 pt-12 sm:pb-6">
       {/* Header de Carbon es position:fixed — pt-12 (48px) en el contenedor compensa su altura. */}
-      <Header aria-label="JobTrackr">
-        <HeaderName href="/applications" prefix="">
-          <span className="flex items-center gap-2">
-            <Logo size={24} />
-            JobTrackr
-          </span>
-        </HeaderName>
-        {userEmail && (
-          <span
-            className="ml-auto hidden items-center pr-4 text-[13px] sm:flex"
-            style={{ color: 'var(--cds-text-secondary)' }}
-          >
-            {userEmail}
-          </span>
-        )}
-        <div className="hidden items-center pr-3 sm:flex">
-          <Button size="sm" renderIcon={Add} onClick={() => setModalState({ mode: 'create' })}>
-            Nueva postulación
-          </Button>
-        </div>
-        <HeaderGlobalBar>
-          <HeaderGlobalAction aria-label="Mi cuenta" onClick={() => router.push('/account')}>
-            <UserAvatar size={20} className="jt-icon jt-icon-avatar" />
-          </HeaderGlobalAction>
-          <HeaderGlobalAction aria-label="Cerrar sesión" onClick={handleLogout}>
-            <Logout size={20} className="jt-icon jt-icon-logout" />
-          </HeaderGlobalAction>
-        </HeaderGlobalBar>
-      </Header>
+      <AppHeader current="board" onCreate={() => setModalState({ mode: 'create' })} />
 
-      <div className="mx-auto max-w-[1180px]">
+      <main id={MAIN_CONTENT_ID} className="mx-auto max-w-[1180px]">
         {hasBoard && applications.length > 0 && (
           <>
             <div className="hidden sm:block" data-testid="stats-desktop">
@@ -266,7 +240,7 @@ export default function ApplicationsPage() {
 
         {loading && <LoadingSkeleton />}
 
-        {!loading && loadError && <ErrorState message={loadError} onRetry={loadApplications} />}
+        {!loading && loadError && <ErrorState message={loadError} onRetry={retryLoad} />}
 
         {hasBoard && applications.length === 0 && (
           <EmptyState onCreate={() => setModalState({ mode: 'create' })} />
@@ -318,7 +292,7 @@ export default function ApplicationsPage() {
             </DragOverlay>
           </DndContext>
         )}
-      </div>
+      </main>
 
       {hasBoard && (
         <div

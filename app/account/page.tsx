@@ -2,10 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Header, HeaderName, HeaderGlobalBar, HeaderGlobalAction, Tabs, TabList, Tab, TabPanels, TabPanel } from '@carbon/react';
-import { Logout } from '@carbon/icons-react';
+import { Tabs, TabList, Tab, TabPanels, TabPanel } from '@carbon/react';
 import { api, ApiError } from '@/lib/api';
-import { Logo } from '@/components/Logo';
+import { AppHeader, MAIN_CONTENT_ID } from '@/components/AppHeader';
 import { getToken, clearToken } from '@/lib/auth';
 import { JobApplication, StatusChange, UserProfile } from '@/lib/types';
 import { ProfileTab } from '@/components/account/ProfileTab';
@@ -39,13 +38,7 @@ export default function AccountPage() {
       })
       .catch((err) => setLoadError(err instanceof ApiError ? err.message : 'No se pudo conectar con el servidor'))
       .finally(() => setLoading(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]);
-
-  function handleLogout() {
-    clearToken();
-    router.push('/login');
-  }
 
   async function handleSaveProfile(name: string) {
     const updated = await api.put<UserProfile>('/auth/me', { name });
@@ -64,21 +57,9 @@ export default function AccountPage() {
 
   return (
     <div style={{ background: 'var(--cds-background)' }} className="min-h-screen pt-12">
-      <Header aria-label="JobTrackr">
-        <HeaderName href="/applications" prefix="">
-          <span className="flex items-center gap-2">
-            <Logo size={24} />
-            JobTrackr
-          </span>
-        </HeaderName>
-        <HeaderGlobalBar>
-          <HeaderGlobalAction aria-label="Cerrar sesión" onClick={handleLogout}>
-            <Logout size={20} className="jt-icon jt-icon-logout" />
-          </HeaderGlobalAction>
-        </HeaderGlobalBar>
-      </Header>
+      <AppHeader current="account" />
 
-      <div className="mx-auto max-w-[720px] px-4 sm:px-6">
+      <main id={MAIN_CONTENT_ID} className="mx-auto max-w-[720px] px-4 sm:px-6">
         <h1 className="pt-6 text-[22px] font-semibold text-[color:var(--cds-text-primary)]">Mi cuenta</h1>
 
         {loading && (
@@ -111,7 +92,7 @@ export default function AccountPage() {
             </TabPanels>
           </Tabs>
         )}
-      </div>
+      </main>
     </div>
   );
 }
