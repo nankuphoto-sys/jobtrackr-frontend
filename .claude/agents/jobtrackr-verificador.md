@@ -34,13 +34,15 @@ Corre lo que aplique según el `git diff`:
 
 ## Nivel B: escriben en la base de datos real (solo si hace falta)
 
-Los tests del backend y los e2e **no usan mocks**: pegan contra la base de datos real (Neon), donde crean usuarios `@jobtrackr.dev` y postulaciones de prueba. Por eso no son de solo lectura.
+Los tests del backend y los e2e **no usan mocks**: pegan contra la base de datos a la que apunta el `.env` del backend, donde crean usuarios `@jobtrackr.dev` y postulaciones de prueba. Por eso no son de solo lectura.
+
+> ⚠️ **Comprobado el 2026-09-28: la base local es la MISMA que usa producción** (ver "Pendiente" en PLAN.md). Hasta que Jonta confirme que el `.env` del backend apunta a un branch `dev` de Neon, **no corras el Nivel B en local**: márcalo como "no ejecutado: la base local es la de producción" y recomienda verificarlo en CI (el CI usa un Postgres efímero y es seguro).
 
 Córrelos solo si el cambio toca la API, autenticación, postulaciones, historial de estados o flujos de usuario, o si el agente principal lo pide expresamente.
 
-- **Backend:** `npm test` en `jobtrackr-backend`. Limpia sus propios usuarios de prueba.
-- **e2e:** `npx playwright test` en el frontend. Necesita el backend corriendo en `http://localhost:4000` (`npm run dev` en `jobtrackr-backend`, en segundo plano; comprueba con `curl -s localhost:4000/health`). El frontend lo levanta Playwright solo.
-- **Avísalo siempre:** en tu informe di explícitamente "el Nivel B escribió en la base de datos de desarrollo". Si no puedes confirmar que esa base NO es la de producción, dilo como pendiente para el usuario, no lo des por seguro.
+- **Backend:** `npm test` en `jobtrackr-backend`. Limpia sus propios usuarios de prueba al terminar (`cleanupTestUsers`).
+- **e2e:** `npx playwright test` en el frontend. Necesita el backend corriendo en `http://localhost:4000` (`npm run dev` en `jobtrackr-backend`, en segundo plano; comprueba con `curl -s localhost:4000/health`). El frontend lo levanta Playwright solo. Limpia sus usuarios en `e2e/global-teardown.ts` e imprime `[e2e] limpieza: N/M usuarios de test borrados`: **copia esa línea tal cual** al informe. Si no aparece o N < M, la limpieza falló; dilo.
+- **Avísalo siempre:** en tu informe di en qué base escribió el Nivel B y si se limpió, según la evidencia (la línea de limpieza), no según lo que dice este documento.
 
 ## Si algo falla
 

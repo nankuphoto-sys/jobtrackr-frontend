@@ -1,6 +1,13 @@
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 
 export default async function globalSetup() {
+  // Archivo donde los tests anotan los usuarios que crean (ver trackForCleanup);
+  // global-teardown los borra al final. Playwright pasa este env a los workers.
+  process.env.E2E_CLEANUP_FILE = join(tmpdir(), `jobtrackr-e2e-${Date.now()}.jsonl`);
+
   try {
     const res = await fetch(`${API_URL}/health`);
     if (!res.ok) throw new Error(`status ${res.status}`);

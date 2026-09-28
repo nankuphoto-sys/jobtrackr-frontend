@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { registerTestUser, loginAs, API_URL } from './helpers';
+import { registerTestUser, loginAs, trackForCleanup, API_URL } from './helpers';
 
 test('actualiza el nombre desde Perfil', async ({ page, request }) => {
   const { token } = await registerTestUser(request, 'e2e-account-profile');
@@ -25,6 +25,7 @@ test('cambia la contraseña desde Configuración y permite loguear con la nueva'
   await page.getByRole('button', { name: 'Cambiar contraseña' }).click();
 
   await expect(page.getByText('Contraseña actualizada')).toBeVisible();
+  trackForCleanup(token, 'nuevapass123');
 
   const loginRes = await request.post(`${API_URL}/auth/login`, { data: { email, password: 'nuevapass123' } });
   expect(loginRes.status()).toBe(200);

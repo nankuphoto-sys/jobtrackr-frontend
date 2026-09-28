@@ -1,13 +1,15 @@
 // Registro auditable del agente. Sin dependencias.
 //
 // Uso desde hooks (el evento llega por stdin como JSON):
-//   node .claude/audit.mjs hook
+//   node .claude/audit.mjs hook            (desde .claude/settings.json del repo)
+//   node <ruta>/audit.mjs hook --global    (desde ~/.claude/settings.json; ver globalHook)
 // Uso por el agente para dejar el "porqué" de una acción:
 //   node .claude/audit.mjs decision '{"problema":"...","accion":"...","por_que":"..."}'
 //
 // Escribe una línea JSON por evento en .claude/audit/AAAA-MM-DD.jsonl (solo se añade).
 // Nunca falla ni bloquea: un error del registro no debe romper la sesión.
-import { appendFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
+import { appendFileSync, existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -131,9 +133,59 @@ function main() {
   }
 
   if (mode === 'hook') {
-    const entry = fromHook(JSON.parse(readStdin() || '{}'));
+    const ev = JSON.parse(readStdin() || '{}');
+    if (process.argv.includes('--global')) return globalHook(ev);
+    const entry = fromHook(ev);
     if (entry) append(entry);
   }
+}
+
+// --- Modo global -----------------------------------------------------------
+// Los hooks de .claude/settings.json solo corren si la sesión se abre DESDE
+// este repo. El modo global se engancha desde ~/.claude/settings.json para
+// cubrir sesiones abiertas en otra carpeta (o en el backend, que no tiene
+// hooks propios). Reglas:
+// - Si el proyecto de la sesión ya tiene sus hooks, no hace nada (sin duplicados).
+// - Solo registra sesiones que tocan JobTrackr. Hasta confirmarlo, los prompts
+//   esperan en un archivo temporal; si la sesión nunca toca JobTrackr, nunca
+//   llegan a este registro.
+const REPOS = /jobtrackr-(frontend|backend)/i;
+
+function projectHasOwnHooks() {
+  const dir = process.env.CLAUDE_PROJECT_DIR ?? '';
+  return REPOS.test(dir) && existsSync(join(dir, '.claude', 'settings.json'));
+}
+
+function sessionFiles(session) {
+  const base = join(tmpdir(), `jobtrackr-audit-${String(session).replace(/[^\w-]/g, '')}`);
+  return { marker: `${base}.relevante`, pending: `${base}.pendiente.jsonl` };
+}
+
+function globalHook(ev) {
+  if (projectHasOwnHooks()) return;
+  const { marker, pending } = sessionFiles(ev.session_id ?? 'desconocida');
+  const relevant = existsSync(marker);
+  const tocaJobtrackr = REPOS.test(`${ev.cwd ?? ''} ${JSON.stringify(ev.tool_input ?? {})}`);
+
+  if (!relevant && !tocaJobtrackr) {
+    if (ev.hook_event_name === 'UserPromptSubmit') appendFileSync(pending, `${JSON.stringify(ev)}\n`);
+    return;
+  }
+
+  if (!relevant) {
+    writeFileSync(marker, '');
+    // Vuelca los prompts en espera en orden, para que sus `ref` queden bien numerados.
+    if (existsSync(pending)) {
+      for (const line of readFileSync(pending, 'utf8').split('\n').filter(Boolean)) {
+        const entry = fromHook(JSON.parse(line));
+        if (entry) append({ ...entry, origen: 'global' });
+      }
+      unlinkSync(pending);
+    }
+  }
+
+  const entry = fromHook(ev);
+  if (entry) append({ ...entry, origen: 'global' });
 }
 
 try {
