@@ -57,7 +57,7 @@ export default function AccountPage() {
 
   return (
     <div style={{ background: 'var(--cds-background)' }} className="min-h-screen pt-12">
-      <AppHeader current="account" />
+      <AppHeader current="account" applications={applications} />
 
       <main id={MAIN_CONTENT_ID} className="mx-auto max-w-[720px] px-4 sm:px-6">
         <h1 className="pt-6 text-[22px] font-semibold text-[color:var(--cds-text-primary)]">Mi cuenta</h1>

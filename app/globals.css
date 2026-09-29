@@ -32,10 +32,29 @@
   [data-om-anim] { animation: none !important; }
 }
 
+/* Header de la app: el borde inferior lo pone la franja de estados (StatusStrip). */
+.cds--header.jt-app-header {
+  border-block-end: 0;
+}
+
+/* Acción principal en tinta, como en la landing (Carbon la trae azul). Solo
+   "Nueva postulación": el resto de botones primarios de Carbon sigue azul. */
+.cds--btn--primary.jt-btn-ink {
+  background-color: #111827;
+}
+.cds--btn--primary.jt-btn-ink:hover {
+  background-color: #374151;
+}
+.cds--btn--primary.jt-btn-ink:active {
+  background-color: #030712;
+}
+
 /* Panel de cuenta del header: Carbon lo hace de alto completo; con dos opciones
-   alcanza con un desplegable del tamaño de su contenido. */
+   alcanza con un desplegable del tamaño de su contenido. Como el contenido del
+   header está centrado en 1180px, el panel se corre para quedar bajo el avatar. */
 .cds--header-panel.jt-account-panel {
   inset-block-end: auto;
+  inset-inline-end: max(0px, calc((100vw - 1180px) / 2));
 }
 .cds--header-panel--expanded.jt-account-panel {
   border-block-end: 1px solid var(--cds-border-subtle);
