@@ -55,7 +55,7 @@ Piezas involucradas:
  │    Nivel A (siempre): typecheck · lint · vitest · build             │
  │    Nivel B (API/auth/flujos): tests del backend + e2e               │
  │      → escriben en la base a la que apunta el .env del backend      │
- │      → hoy esa base ES producción: el Nivel B se valida en CI       │
+ │      → branch `dev` de Neon (separado de producción desde 29-09)   │
  │    SubagentStop → registra su informe                               │
  └──────────────┬────────────────────────────────────┬─────────────────┘
         NO APRUEBA                                APRUEBA
@@ -104,6 +104,6 @@ Piezas involucradas:
 | Paso | Qué falló | Estado |
 |---|---|---|
 | 0 | Una sesión abierta desde otra carpeta no cargó los hooks del repo: el registro no tenía nada de ese día | ✅ Hooks globales en `~/.claude/settings.json` (`audit.mjs hook --global`). Solo registran sesiones que tocan JobTrackr, y no duplican cuando la sesión se abre desde este repo. ⚠️ Los **permisos** siguen siendo del repo: conviene abrir las sesiones desde aquí. |
-| 4 | El Nivel B corre contra la base Neon compartida con producción | ⏳ Pendiente: branch `dev` en Neon (lo tiene que crear Jonta). Mientras tanto, el verificador marca el Nivel B local como "no ejecutado" y lo valida en CI. |
+| 4 | El Nivel B corre contra la base Neon compartida con producción | ✅ (2026-09-29) El `.env` local apunta al branch `dev`. Comprobado con un usuario creado en `dev` que no puede loguearse en producción (HTTP 401). |
 | 4 | El verificador dijo que los e2e "crean y limpian" sus usuarios, y no limpiaban | ✅ `e2e/global-teardown.ts` borra los usuarios creados e imprime `[e2e] limpieza: N/M`. El verificador copia esa línea en vez de afirmarlo. |
 | 8 | No se escribió el registro `decision` del commit del rediseño de headers | ⚠️ No se puede reconstruir con un `aprobacion.ref` válido porque el prompt no se registró. Queda documentado aquí y en PLAN.md. |
