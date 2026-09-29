@@ -89,6 +89,33 @@ test('el drag por teclado mueve la tarjeta a la columna vecina con una sola flec
     .toBe('ENTREVISTA');
 });
 
+test('el drag por teclado también mueve una tarjeta que no es la primera de su columna', async ({ page, request }) => {
+  // Regresión: el coordinate getter solo movía en X. Una tarjeta más abajo que
+  // el alto de la columna destino (vacía, y por eso corta) no se superponía con
+  // ninguna columna y al soltarla no pasaba nada.
+  const { token } = await registerTestUser(request, 'e2e-kanban-keyboard-2nd');
+  await seedApplication(request, token, { company: 'Initech', role: 'QA Engineer', status: 'APLICADO' });
+  await seedApplication(request, token, { company: 'Globex', role: 'Frontend Dev', status: 'APLICADO' });
+
+  await loginAs(page, token);
+  await page.goto('/applications');
+
+  const column = page.locator('[data-testid="column-APLICADO"] [role="button"]');
+  await expect(column).toHaveCount(2);
+  const second = column.nth(1);
+  const company = (await second.textContent())?.includes('Initech') ? 'Initech' : 'Globex';
+  await second.focus();
+  await expect(second).toBeFocused();
+
+  await page.keyboard.press('Space');
+  await page.waitForTimeout(150);
+  await page.keyboard.press('ArrowRight');
+  await page.waitForTimeout(150);
+  await page.keyboard.press('Space');
+
+  await expect(page.locator('[data-testid="column-ENTREVISTA"]').getByText(company)).toBeVisible();
+});
+
 test('las métricas de arriba reflejan los conteos y la tasa de respuesta', async ({ page, request }) => {
   const { token } = await registerTestUser(request, 'e2e-kanban-stats');
   await seedApplication(request, token, { company: 'A', role: 'X', status: 'POR_APLICAR' });

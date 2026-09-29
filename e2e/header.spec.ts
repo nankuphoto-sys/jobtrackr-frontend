@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { registerTestUser, loginAs } from './helpers';
+import { registerTestUser, loginAs, API_URL } from './helpers';
 
 test('el avatar abre el panel de cuenta, Escape lo cierra y "Cerrar sesión" desloguea', async ({ page, request }) => {
   const { token } = await registerTestUser(request, 'e2e-header-panel');
@@ -50,4 +50,29 @@ test('login y registro tienen un header con salida a la landing', async ({ page 
     await page.getByRole('link', { name: 'Volver al inicio' }).click();
     await expect(page).toHaveURL(/\/$/);
   }
+});
+
+test('la franja de estados del header refleja los conteos y cambia en vivo al mover una tarjeta', async ({ page, request }) => {
+  const { token } = await registerTestUser(request, 'e2e-header-strip');
+  const headers = { Authorization: `Bearer ${token}` };
+  await request.post(`${API_URL}/applications`, { headers, data: { company: 'Initech', role: 'QA', status: 'APLICADO' } });
+  await request.post(`${API_URL}/applications`, { headers, data: { company: 'Globex', role: 'Dev', status: 'APLICADO' } });
+  await loginAs(page, token);
+  await page.goto('/applications');
+
+  const strip = page.getByRole('img', { name: /^Postulaciones por estado/ });
+  await expect(strip).toHaveAttribute('aria-label', /Aplicado 2, Entrevista 0/);
+
+  // Mover Initech a Entrevista por teclado (mismo patrón que kanban.spec).
+  const card = page.locator('[data-testid="column-APLICADO"] [role="button"]', { hasText: 'Initech' });
+  await card.focus();
+  await expect(card).toBeFocused();
+  await page.keyboard.press('Space');
+  await page.waitForTimeout(150);
+  await page.keyboard.press('ArrowRight');
+  await page.waitForTimeout(150);
+  await page.keyboard.press('Space');
+
+  await expect(page.locator('[data-testid="column-ENTREVISTA"]').getByText('Initech')).toBeVisible();
+  await expect(strip).toHaveAttribute('aria-label', /Aplicado 1, Entrevista 1/);
 });

@@ -61,10 +61,18 @@ const columnCoordinateGetter: KeyboardCoordinateGetter = (event, { currentCoordi
   const targetRect = droppableRects.get(APPLICATION_STATUSES[targetIndex]);
   if (!targetRect) return currentCoordinates;
 
+  // En vertical solo se mueve si hace falta: si el centro de la tarjeta queda
+  // fuera del alto de la columna destino (p. ej. la 2ª tarjeta hacia una columna
+  // vacía, que es corta), sin este ajuste no se superpone con ninguna columna y
+  // al soltar no pasa nada.
+  const centerY = collisionRect.top + collisionRect.height / 2;
+  const insideTarget = centerY >= targetRect.top && centerY <= targetRect.top + targetRect.height;
+  const dy = insideTarget ? 0 : targetRect.top + targetRect.height / 2 - centerY;
+
   event.preventDefault();
   return {
     x: currentCoordinates.x + (targetRect.left + targetRect.width / 2) - (collisionRect.left + collisionRect.width / 2),
-    y: currentCoordinates.y,
+    y: currentCoordinates.y + dy,
   };
 };
 
@@ -206,7 +214,7 @@ export default function ApplicationsPage() {
   return (
     <div style={{ background: 'var(--cds-background)' }} className="min-h-screen pb-24 pt-12 sm:pb-6">
       {/* Header de Carbon es position:fixed — pt-12 (48px) en el contenedor compensa su altura. */}
-      <AppHeader current="board" onCreate={() => setModalState({ mode: 'create' })} />
+      <AppHeader current="board" applications={applications} onCreate={() => setModalState({ mode: 'create' })} />
 
       <main id={MAIN_CONTENT_ID} className="mx-auto max-w-[1180px]">
         {hasBoard && applications.length > 0 && (
@@ -299,7 +307,7 @@ export default function ApplicationsPage() {
           className="fixed inset-x-0 bottom-0 border-t p-3.5 sm:hidden"
           style={{ borderColor: 'var(--cds-border-subtle-00)', background: 'var(--cds-layer)' }}
         >
-          <Button renderIcon={Add} onClick={() => setModalState({ mode: 'create' })} className="!w-full !max-w-none justify-center">
+          <Button renderIcon={Add} onClick={() => setModalState({ mode: 'create' })} className="jt-btn-ink !w-full !max-w-none justify-center">
             Nueva postulación
           </Button>
         </div>
