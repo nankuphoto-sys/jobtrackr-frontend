@@ -299,7 +299,7 @@ export default function ApplicationsPage() {
           className="fixed inset-x-0 bottom-0 border-t p-3.5 sm:hidden"
           style={{ borderColor: 'var(--cds-border-subtle-00)', background: 'var(--cds-layer)' }}
         >
-          <Button renderIcon={Add} onClick={() => setModalState({ mode: 'create' })} className="w-full justify-center">
+          <Button renderIcon={Add} onClick={() => setModalState({ mode: 'create' })} className="!w-full !max-w-none justify-center">
             Nueva postulación
           </Button>
         </div>

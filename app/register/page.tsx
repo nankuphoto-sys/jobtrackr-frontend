@@ -7,7 +7,7 @@ import { TextInput, PasswordInput, Button, InlineNotification } from '@carbon/re
 import { api, ApiError } from '@/lib/api';
 import { saveToken, saveUserEmail } from '@/lib/auth';
 import { AuthResponse } from '@/lib/types';
-import { Logo } from '@/components/Logo';
+import { AuthHeader } from '@/components/AuthHeader';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -63,92 +63,91 @@ export default function RegisterPage() {
   }
 
   return (
-    <main
-      className="flex min-h-screen items-center justify-center p-4 sm:p-6"
-      style={{ background: 'var(--cds-background)' }}
-    >
-      <section
-        className="flex w-full max-w-sm flex-col gap-5 border p-8"
-        style={{ borderColor: 'var(--cds-border-subtle-01)', background: 'var(--cds-layer)' }}
-      >
-        <div className="flex flex-col gap-2.5">
-          <Logo size={32} />
-          <h1 className="text-[22px] font-semibold leading-[1.15] tracking-[-.01em] text-[color:var(--cds-text-primary)]">
-            Crear cuenta
-          </h1>
-          <p className="text-[14px] leading-[1.5] text-[color:var(--cds-text-secondary)]">
-            Un tablero para todas tus vacantes.
-          </p>
-        </div>
+    <div className="flex min-h-screen flex-col" style={{ background: 'var(--cds-background)' }}>
+      <AuthHeader />
+      <main className="flex flex-1 items-center justify-center p-4 sm:p-6">
+        <section
+          className="flex w-full max-w-sm flex-col gap-5 border p-8"
+          style={{ borderColor: 'var(--cds-border-subtle-01)', background: 'var(--cds-layer)' }}
+        >
+          <div className="flex flex-col gap-2.5">
+            <h1 className="text-[22px] font-semibold leading-[1.15] tracking-[-.01em] text-[color:var(--cds-text-primary)]">
+              Crear cuenta
+            </h1>
+            <p className="text-[14px] leading-[1.5] text-[color:var(--cds-text-secondary)]">
+              Un tablero para todas tus vacantes.
+            </p>
+          </div>
 
-        {error && <InlineNotification kind="error" title={error} lowContrast hideCloseButton />}
+          {error && <InlineNotification kind="error" title={error} lowContrast hideCloseButton />}
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <TextInput
-            id="email"
-            type="email"
-            labelText="Correo"
-            placeholder="tu@correo.com"
-            required
-            value={email}
-            invalid={touched.email && !emailValid}
-            invalidText="Escribe un correo válido, por ejemplo nombre@correo.com"
-            onChange={(e) => setEmail(e.target.value)}
-            onBlur={() => setTouched((t) => ({ ...t, email: true }))}
-          />
-
-          <div className="flex flex-col gap-2">
-            <PasswordInput
-              id="password"
-              labelText="Contraseña"
-              placeholder="Mínimo 8 caracteres"
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            <TextInput
+              id="email"
+              type="email"
+              labelText="Correo"
+              placeholder="tu@correo.com"
               required
-              value={password}
-              invalid={touched.password && !passwordValid}
-              invalidText="Mínimo 8 caracteres."
-              onChange={(e) => setPassword(e.target.value)}
-              onBlur={() => setTouched((t) => ({ ...t, password: true }))}
+              value={email}
+              invalid={touched.email && !emailValid}
+              invalidText="Escribe un correo válido, por ejemplo nombre@correo.com"
+              onChange={(e) => setEmail(e.target.value)}
+              onBlur={() => setTouched((t) => ({ ...t, email: true }))}
+            />
+
+            <div className="flex flex-col gap-2">
+              <PasswordInput
+                id="password"
+                labelText="Contraseña"
+                placeholder="Mínimo 8 caracteres"
+                required
+                value={password}
+                invalid={touched.password && !passwordValid}
+                invalidText="Mínimo 8 caracteres."
+                onChange={(e) => setPassword(e.target.value)}
+                onBlur={() => setTouched((t) => ({ ...t, password: true }))}
+                hidePasswordLabel="Ocultar contraseña"
+                showPasswordLabel="Mostrar contraseña"
+              />
+              <div className="flex gap-1">
+                {[1, 2, 3].map((bar) => (
+                  <span
+                    key={bar}
+                    className="h-[3px] flex-1"
+                    style={{ background: bar <= strength ? STRENGTH_COLOR[strength] : 'var(--cds-border-subtle-01)' }}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <PasswordInput
+              id="confirmPassword"
+              labelText="Confirmar contraseña"
+              placeholder="Repite la contraseña"
+              required
+              value={confirmPassword}
+              invalid={touched.confirmPassword && !confirmValid}
+              invalidText="Las contraseñas no coinciden."
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              onBlur={() => setTouched((t) => ({ ...t, confirmPassword: true }))}
               hidePasswordLabel="Ocultar contraseña"
               showPasswordLabel="Mostrar contraseña"
             />
-            <div className="flex gap-1">
-              {[1, 2, 3].map((bar) => (
-                <span
-                  key={bar}
-                  className="h-[3px] flex-1"
-                  style={{ background: bar <= strength ? STRENGTH_COLOR[strength] : 'var(--cds-border-subtle-01)' }}
-                />
-              ))}
-            </div>
-          </div>
 
-          <PasswordInput
-            id="confirmPassword"
-            labelText="Confirmar contraseña"
-            placeholder="Repite la contraseña"
-            required
-            value={confirmPassword}
-            invalid={touched.confirmPassword && !confirmValid}
-            invalidText="Las contraseñas no coinciden."
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            onBlur={() => setTouched((t) => ({ ...t, confirmPassword: true }))}
-            hidePasswordLabel="Ocultar contraseña"
-            showPasswordLabel="Mostrar contraseña"
-          />
+            <Button
+              type="submit"
+              disabled={loading || (Object.values(touched).some(Boolean) && !formValid)}
+              className="mt-1 !w-full !max-w-none justify-center"
+            >
+              {loading ? 'Creando cuenta...' : 'Crear cuenta'}
+            </Button>
+          </form>
 
-          <Button
-            type="submit"
-            disabled={loading || (Object.values(touched).some(Boolean) && !formValid)}
-            className="mt-1 w-full justify-center"
-          >
-            {loading ? 'Creando cuenta...' : 'Crear cuenta'}
-          </Button>
-        </form>
-
-        <span className="text-[13px] text-[color:var(--cds-text-secondary)]">
-          ¿Ya tienes cuenta? <Link href="/login" className="cds--link">Iniciar sesión</Link>
-        </span>
-      </section>
-    </main>
+          <span className="text-[13px] text-[color:var(--cds-text-secondary)]">
+            ¿Ya tienes cuenta? <Link href="/login" className="cds--link">Iniciar sesión</Link>
+          </span>
+        </section>
+      </main>
+    </div>
   );
 }

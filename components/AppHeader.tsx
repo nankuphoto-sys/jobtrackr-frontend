@@ -85,7 +85,10 @@ export function AppHeader({
           JobTrackr
         </span>
       </HeaderName>
-      <div className="ml-auto hidden items-center pr-3 sm:flex">
+      {/* Separador que empuja todo a la derecha. No va como ml-auto en el botón:
+          en mobile el botón está oculto (display:none) y su margen no empujaría nada. */}
+      <div className="flex-1" aria-hidden="true" />
+      <div className="hidden items-center pr-3 sm:flex">
         <Button size="sm" renderIcon={Add} onClick={handleCreate}>
           Nueva postulación
         </Button>
