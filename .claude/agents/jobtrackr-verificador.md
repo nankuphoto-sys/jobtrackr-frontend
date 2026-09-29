@@ -36,7 +36,7 @@ Corre lo que aplique según el `git diff`:
 
 Los tests del backend y los e2e **no usan mocks**: pegan contra la base de datos a la que apunta el `.env` del backend, donde crean usuarios `@jobtrackr.dev` y postulaciones de prueba. Por eso no son de solo lectura.
 
-> ⚠️ **Comprobado el 2026-09-28: la base local es la MISMA que usa producción** (ver "Pendiente" en PLAN.md). Hasta que Jonta confirme que el `.env` del backend apunta a un branch `dev` de Neon, **no corras el Nivel B en local**: márcalo como "no ejecutado: la base local es la de producción" y recomienda verificarlo en CI (el CI usa un Postgres efímero y es seguro).
+> Desde el 2026-09-29 el `.env` local del backend apunta al branch **`dev`** de Neon, separado de producción (branch `production`, el que usa Render). Se comprobó con un usuario creado en `dev` que no pudo loguearse en la API de producción (HTTP 401). El Nivel B en local escribe en `dev`, no en producción.
 
 Córrelos solo si el cambio toca la API, autenticación, postulaciones, historial de estados o flujos de usuario, o si el agente principal lo pide expresamente.
 
