@@ -7,7 +7,7 @@ import { TextInput, PasswordInput, Button, InlineNotification, InlineLoading } f
 import { api, ApiError } from '@/lib/api';
 import { saveToken, saveUserEmail } from '@/lib/auth';
 import { AuthResponse } from '@/lib/types';
-import { Logo } from '@/components/Logo';
+import { AuthHeader } from '@/components/AuthHeader';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -33,59 +33,58 @@ export default function LoginPage() {
   }
 
   return (
-    <main
-      className="flex min-h-screen items-center justify-center p-4 sm:p-6"
-      style={{ background: 'var(--cds-background)' }}
-    >
-      <section
-        className="flex w-full max-w-sm flex-col gap-5 border p-8"
-        style={{ borderColor: 'var(--cds-border-subtle-01)', background: 'var(--cds-layer)' }}
-      >
-        <div className="flex flex-col gap-2.5">
-          <Logo size={32} />
-          <h1 className="text-[22px] font-semibold leading-[1.15] tracking-[-.01em] text-[color:var(--cds-text-primary)]">
-            Iniciar sesión
-          </h1>
-          <p className="text-[14px] leading-[1.5] text-[color:var(--cds-text-secondary)]">
-            Continúa el seguimiento de tus postulaciones.
-          </p>
-        </div>
+    <div className="flex min-h-screen flex-col" style={{ background: 'var(--cds-background)' }}>
+      <AuthHeader />
+      <main className="flex flex-1 items-center justify-center p-4 sm:p-6">
+        <section
+          className="flex w-full max-w-sm flex-col gap-5 border p-8"
+          style={{ borderColor: 'var(--cds-border-subtle-01)', background: 'var(--cds-layer)' }}
+        >
+          <div className="flex flex-col gap-2.5">
+            <h1 className="text-[22px] font-semibold leading-[1.15] tracking-[-.01em] text-[color:var(--cds-text-primary)]">
+              Iniciar sesión
+            </h1>
+            <p className="text-[14px] leading-[1.5] text-[color:var(--cds-text-secondary)]">
+              Continúa el seguimiento de tus postulaciones.
+            </p>
+          </div>
 
-        {error && <InlineNotification kind="error" title={error} lowContrast hideCloseButton />}
+          {error && <InlineNotification kind="error" title={error} lowContrast hideCloseButton />}
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <TextInput
-            id="email"
-            type="email"
-            labelText="Correo"
-            placeholder="tu@correo.com"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-          <PasswordInput
-            id="password"
-            labelText="Contraseña"
-            placeholder="••••••••"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            hidePasswordLabel="Ocultar contraseña"
-            showPasswordLabel="Mostrar contraseña"
-          />
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            <TextInput
+              id="email"
+              type="email"
+              labelText="Correo"
+              placeholder="tu@correo.com"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+            <PasswordInput
+              id="password"
+              labelText="Contraseña"
+              placeholder="••••••••"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              hidePasswordLabel="Ocultar contraseña"
+              showPasswordLabel="Mostrar contraseña"
+            />
 
-          <Button type="submit" disabled={loading} className="mt-1 w-full justify-center">
-            Entrar
-          </Button>
-        </form>
+            <Button type="submit" disabled={loading} className="mt-1 !w-full !max-w-none justify-center">
+              Entrar
+            </Button>
+          </form>
 
-        <div className="flex flex-wrap items-center justify-between gap-2.5">
-          <span className="text-[13px] text-[color:var(--cds-text-secondary)]">
-            ¿No tienes cuenta? <Link href="/register" className="cds--link">Registrarse</Link>
-          </span>
-          {loading && <InlineLoading description="Cargando" />}
-        </div>
-      </section>
-    </main>
+          <div className="flex flex-wrap items-center justify-between gap-2.5">
+            <span className="text-[13px] text-[color:var(--cds-text-secondary)]">
+              ¿No tienes cuenta? <Link href="/register" className="cds--link">Registrarse</Link>
+            </span>
+            {loading && <InlineLoading description="Cargando" />}
+          </div>
+        </section>
+      </main>
+    </div>
   );
 }
