@@ -1,0 +1,1 @@
+JobTrackr: tablero Kanban para organizar tu búsqueda de empleo
