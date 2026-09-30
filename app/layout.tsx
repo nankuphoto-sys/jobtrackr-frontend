@@ -22,9 +22,29 @@ const plexMono = IBM_Plex_Mono({
   display: 'swap',
 });
 
+const DESCRIPTION =
+  'Un tablero para todas tus postulaciones. Arrastra cada vacante entre cinco estados y sabe en un vistazo dónde estás parado.';
+
+// La imagen para compartir (app/opengraph-image.png, twitter-image.png) sale del
+// kit de marca: 1200×627 en tinta, que destaca en el feed blanco de LinkedIn.
+// metadataBase hace que su URL sea absoluta, que es lo que exigen LinkedIn y X.
 export const metadata: Metadata = {
+  metadataBase: new URL('https://jobtrackr-frontend-two.vercel.app'),
   title: 'JobTrackr',
-  description: 'Seguimiento de postulaciones de empleo',
+  description: DESCRIPTION,
+  openGraph: {
+    title: 'JobTrackr',
+    description: DESCRIPTION,
+    siteName: 'JobTrackr',
+    locale: 'es_ES',
+    type: 'website',
+    url: '/',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'JobTrackr',
+    description: DESCRIPTION,
+  },
 };
 
 export default function RootLayout({
