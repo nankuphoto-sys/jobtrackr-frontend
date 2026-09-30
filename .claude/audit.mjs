@@ -17,13 +17,32 @@ const DIR = join(dirname(fileURLToPath(import.meta.url)), 'audit');
 const MAX = 500;
 
 // Comandos que cambian algo fuera del código local o son difíciles de deshacer.
-const RISKY = [
-  /\bgit\s+push\b/,
-  /\bgit\s+reset\s+--hard\b/,
-  /\bprisma\s+(migrate|db\s+push)\b/,
-  /\bcurl\b[^|]*\s-X\s*(POST|PUT|PATCH|DELETE)\b/i,
-  /\brm\s+-\w*[rf]/,
-];
+// Con nombre: el motivo se guarda en el registro (`motivos`) y se calcula sobre el
+// comando COMPLETO, antes de recortarlo a MAX caracteres para guardarlo.
+const RISKY = {
+  push: /\bgit\s+push\b(?![^\n|;&]*--dry-run)/,
+  'reset-hard': /\bgit\s+reset\s+--hard\b/,
+  migracion: /\bprisma\s+(migrate|db\s+push)\b/,
+  'curl-escritura': /\bcurl\b[^|]*\s-X\s*(POST|PUT|PATCH|DELETE)\b/i,
+  // Escrituras a producción hechas desde scripts (node + fetch), que el patrón de
+  // curl no ve. POST /auth/login solo comprueba credenciales: no cuenta.
+  'produccion-escritura': (cmd) =>
+    /onrender\.com|vercel\.app/.test(cmd) &&
+    (/['"](PUT|PATCH|DELETE)['"]|-X\s*(PUT|PATCH|DELETE)/i.test(cmd) ||
+      /\/auth\/register|\/applications|\/auth\/me|\/auth\/password/.test(cmd) && /['"]POST['"]|-X\s*POST/i.test(cmd)),
+  'borrado-recursivo': /\brm\s+-\w*[rf]/,
+};
+
+// Comandos que fabrican eventos sintéticos para probar este mismo hook: llevan
+// comandos de ejemplo ("git push …") como texto y no son trabajo del agente.
+const isMeta = (cmd) => /hook_event_name|prueba-/.test(cmd);
+
+function riskReasons(cmd) {
+  if (isMeta(cmd)) return [];
+  return Object.entries(RISKY)
+    .filter(([, test]) => (typeof test === 'function' ? test(cmd) : test.test(cmd)))
+    .map(([name]) => name);
+}
 
 const SECRETS = [
   /(authorization:\s*bearer\s+)\S+/gi,
@@ -86,15 +105,24 @@ function fromHook(ev) {
 
   if (name === 'PreToolUse' && ev.tool_name === 'Bash') {
     const cmd = String(input.command ?? '');
-    if (!RISKY.some((r) => r.test(cmd))) return null;
-    return { ...base, type: 'riesgo', herramienta: 'Bash', comando: clip(cmd), ultimo_prompt: `${session}#${promptCount(session)}` };
+    const motivos = riskReasons(cmd);
+    if (motivos.length === 0) return null;
+    return { ...base, type: 'riesgo', herramienta: 'Bash', motivos, comando: clip(cmd), ultimo_prompt: `${session}#${promptCount(session)}` };
+  }
+
+  // Acciones que el sistema de permisos bloqueó: miden si el agente intentó algo
+  // que no debía (o que requería aprobación) y cómo reaccionó después.
+  if (name === 'PermissionDenied') {
+    const detalle = clip(ev.reason ?? ev.permission_decision_reason ?? ev.message ?? '', 300);
+    return { ...base, type: 'denegado', herramienta: ev.tool_name, comando: clip(input.command ?? input.file_path ?? ''), detalle };
   }
 
   if (name === 'PostToolUse') {
     const resp = ev.tool_response ?? {};
     const fallo = resp.is_error === true || (typeof resp.exit_code === 'number' && resp.exit_code !== 0) || resp.success === false;
     if (ev.tool_name === 'Bash') {
-      return { ...base, type: 'accion', herramienta: 'Bash', comando: clip(input.command), resultado: fallo ? 'error' : 'ok' };
+      const motivos = riskReasons(String(input.command ?? ''));
+      return { ...base, type: 'accion', herramienta: 'Bash', comando: clip(input.command), ...(motivos.length && { motivos }), ...(isMeta(String(input.command ?? '')) && { meta: true }), resultado: fallo ? 'error' : 'ok' };
     }
     if (ev.tool_name === 'Edit' || ev.tool_name === 'Write') {
       return { ...base, type: 'accion', herramienta: ev.tool_name, archivo: input.file_path, resultado: fallo ? 'error' : 'ok' };
@@ -105,7 +133,8 @@ function fromHook(ev) {
   if (name === 'PostToolUseFailure') {
     const detalle = clip(ev.error ?? ev.tool_response?.error, 300);
     if (ev.tool_name === 'Bash') {
-      return { ...base, type: 'accion', herramienta: 'Bash', comando: clip(input.command), resultado: 'error', detalle };
+      const motivos = riskReasons(String(input.command ?? ''));
+      return { ...base, type: 'accion', herramienta: 'Bash', comando: clip(input.command), ...(motivos.length && { motivos }), resultado: 'error', detalle };
     }
     if (ev.tool_name === 'Edit' || ev.tool_name === 'Write') {
       return { ...base, type: 'accion', herramienta: ev.tool_name, archivo: input.file_path, resultado: 'error', detalle };

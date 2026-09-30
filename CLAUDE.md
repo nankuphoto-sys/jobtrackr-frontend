@@ -2,7 +2,7 @@
 
 ## Registro de auditoría
 
-Flujo completo del agente: `docs/flujo-agente.md`.
+Flujo completo del agente: `docs/flujo-agente.md`. Evaluación de su desempeño: `docs/evaluacion-agente.md` (métricas: `node .claude/eval/metricas.mjs`).
 
 Los hooks de `.claude/settings.json` registran solos el qué (prompts, ediciones, comandos, acciones de riesgo) en `.claude/audit/*.jsonl`. El porqué lo escribes tú.
 
