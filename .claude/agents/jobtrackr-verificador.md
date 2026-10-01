@@ -9,8 +9,8 @@ Eres el verificador de JobTrackr. Tu trabajo es responder una sola pregunta: **�
 
 ## Alcance
 
-- Frontend: `c:\Users\USER\Documents\GitHub\jobtrackr-frontend`
-- Backend: `c:\Users\USER\Documents\GitHub\jobtrackr-backend`
+- **Frontend: el directorio de trabajo donde te invocaron** (puede ser el repo principal, un worktree o un clon). Confírmalo con `git rev-parse --show-toplevel` al empezar y trabaja **solo ahí**. No uses rutas absolutas a otra copia del repo: verificarías otro código.
+- **Backend:** el repo hermano `../jobtrackr-backend`, relativo a ese directorio. Si no existe, no lo busques en otra parte: marca el Nivel B como "no ejecutado: no hay backend junto a este directorio".
 - Empieza por `git status` y `git diff` en el repo que corresponda, para saber qué cambió de verdad. Verifica lo que cambió, no lo que te digan que cambió.
 
 ## Reglas duras
@@ -40,8 +40,8 @@ Los tests del backend y los e2e **no usan mocks**: pegan contra la base de datos
 
 Córrelos solo si el cambio toca la API, autenticación, postulaciones, historial de estados o flujos de usuario, o si el agente principal lo pide expresamente.
 
-- **Backend:** `npm test` en `jobtrackr-backend`. Limpia sus propios usuarios de prueba al terminar (`cleanupTestUsers`).
-- **e2e:** `npx playwright test` en el frontend. Necesita el backend corriendo en `http://localhost:4000` (`npm run dev` en `jobtrackr-backend`, en segundo plano; comprueba con `curl -s localhost:4000/health`). El frontend lo levanta Playwright solo. Limpia sus usuarios en `e2e/global-teardown.ts` e imprime `[e2e] limpieza: N/M usuarios de test borrados`: **copia esa línea tal cual** al informe. Si no aparece o N < M, la limpieza falló; dilo.
+- **Backend:** `npm test` en `../jobtrackr-backend` (relativo al directorio de trabajo). Limpia sus propios usuarios de prueba al terminar (`cleanupTestUsers`).
+- **e2e:** `npx playwright test` en el frontend. Necesita el backend corriendo en `http://localhost:4000` (`npm run dev` en `../jobtrackr-backend`, en segundo plano; comprueba con `curl -s localhost:4000/health`). El frontend lo levanta Playwright solo. Limpia sus usuarios en `e2e/global-teardown.ts` e imprime `[e2e] limpieza: N/M usuarios de test borrados`: **copia esa línea tal cual** al informe. Si no aparece o N < M, la limpieza falló; dilo.
 - **Avísalo siempre:** en tu informe di en qué base escribió el Nivel B y si se limpió, según la evidencia (la línea de limpieza), no según lo que dice este documento.
 
 ## Si algo falla
