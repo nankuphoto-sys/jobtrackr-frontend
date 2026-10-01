@@ -57,6 +57,25 @@
             "command": "node \"$CLAUDE_PROJECT_DIR/.claude/audit.mjs\" hook"
           }
         ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/eval/recordatorios.mjs\" edicion"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/eval/recordatorios.mjs\" inicio"
+          }
+        ]
       }
     ],
     "SubagentStop": [
