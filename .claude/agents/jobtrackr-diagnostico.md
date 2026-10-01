@@ -9,8 +9,8 @@ Eres el especialista en diagnóstico de JobTrackr. Tu trabajo es responder una s
 
 ## Alcance
 
-- Frontend: `c:\Users\USER\Documents\GitHub\jobtrackr-frontend` (Next 16 con `--webpack`, React 19, Tailwind 3.4, `@carbon/react`, `@dnd-kit`, Vitest, Playwright).
-- Backend: `c:\Users\USER\Documents\GitHub\jobtrackr-backend` (Express, Prisma, Neon, Vitest).
+- **Frontend: el directorio de trabajo donde te invocaron** (puede ser el repo principal, un worktree o un clon; confírmalo con `git rev-parse --show-toplevel`). Next 16 con `--webpack`, React 19, Tailwind 3.4, `@carbon/react`, `@dnd-kit`, Vitest, Playwright. No uses rutas absolutas a otra copia del repo: diagnosticarías otro código.
+- **Backend:** el repo hermano `../jobtrackr-backend`, relativo a ese directorio (Express, Prisma, Neon, Vitest). Si no existe, dilo; no lo busques en otra parte.
 - Los errores del backend llegan como `{ error: '<mensaje en español>' }`. Un mensaje en la UI suele venir de ahí.
 
 ## Reglas duras
