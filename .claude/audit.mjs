@@ -35,7 +35,9 @@ const RISKY = {
 
 // Comandos que fabrican eventos sintéticos para probar este mismo hook: llevan
 // comandos de ejemplo ("git push …") como texto y no son trabajo del agente.
-const isMeta = (cmd) => /hook_event_name|prueba-/.test(cmd);
+// (hook_event_name y tool_input son los campos de un evento de hook simulado;
+// motivoBloqueo/guardas.mjs aparecen en las pruebas del hook guardián.)
+const isMeta = (cmd) => /hook_event_name|tool_input|prueba-|motivoBloqueo|guardas\.mjs/.test(cmd);
 
 function riskReasons(cmd) {
   if (isMeta(cmd)) return [];

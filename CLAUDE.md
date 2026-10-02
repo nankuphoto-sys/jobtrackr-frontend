@@ -20,13 +20,13 @@ node .claude/audit.mjs decision '{"problema":"...","causa_raiz":"...","accion":"
 
 - `jobtrackr-diagnostico`: úsalo cuando no sepas dónde está la causa de un problema. Solo lee y propone.
 - `jobtrackr-verificador`: úsalo después de aplicar un cambio y antes de decir que está listo o de hacer commit. No des un cambio por bueno sin su veredicto.
-  - Nivel A (tsc, unitarios, build) no toca datos. El Nivel B (tests del backend y e2e) escribe en la base de datos real; pídelo solo si el cambio toca la API, la autenticación o los flujos de usuario.
+  - Nivel A (tsc, unitarios, build) no toca datos. El Nivel B (tests del backend y e2e) escribe en la base de datos de desarrollo (branch `dev` de Neon, separado de producción); pídelo solo si el cambio toca la API, la autenticación o los flujos de usuario.
   - Copia su veredicto y su lista de `no_verificado` al registro `decision`.
   - **Con NO APRUEBA no hay commit.** Si el veredicto no parece corresponder a tu cambio (por ejemplo, cita archivos que no tocaste), no lo descartes y sigas: vuelve a lanzarlo indicándole el directorio exacto (`git rev-parse --show-toplevel`) y espera un veredicto válido. Nunca hagas commit sobre un veredicto que tú mismo decidiste ignorar.
 
 ## Permisos
 
-`.claude/settings.json` bloquea `git push --force`, `git reset --hard`, `rm -rf` y la lectura de `.env`, y pide confirmación antes de `git push`, migraciones de Prisma y `curl` que modifique datos. No intentes rodear esos bloqueos.
+`.claude/settings.json` bloquea `git push --force`, `git reset --hard`, `rm -rf` y la lectura de `.env`, y pide confirmación antes de `git push`, migraciones de Prisma y `curl` que modifique datos. Además, el hook `.claude/guardas.mjs` bloquea **cualquier** push forzado, sin importar cómo esté escrito (`--force` al final, `-f` combinado, `--force-with-lease`, refspec con `+`). No intentes rodear esos bloqueos: si de verdad hace falta reescribir historia remota, explícale a Jonta por qué y que lo haga él.
 
 ## Credenciales
 

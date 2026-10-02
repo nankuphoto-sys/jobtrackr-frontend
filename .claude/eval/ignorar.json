@@ -2,5 +2,13 @@
   {
     "ts": "2026-09-30T21:30:09.364Z",
     "razon": "Pipe-test del detector de riesgo (al construir esta evaluación): el comando lleva 'git push' y 'git commit' como texto de ejemplo. Anterior a la marca `meta` del hook."
+  },
+  {
+    "ts": "2026-10-02T18:46:02.580Z",
+    "razon": "Pipe-test de .claude/guardas.mjs: pasa 'git push origin main --force' como texto en un evento sintético con tool_input. Anterior a que isMeta reconociera ese formato."
+  },
+  {
+    "ts": "2026-10-02T19:03:10.901Z",
+    "razon": "Prueba de motivoBloqueo hecha por el verificador: escribe un archivo con comandos de push forzado como texto. Anterior a que isMeta reconociera motivoBloqueo/guardas.mjs."
   }
 ]
