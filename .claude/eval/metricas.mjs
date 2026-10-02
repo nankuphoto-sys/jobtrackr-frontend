@@ -14,7 +14,7 @@
 // completo. Los registros anteriores no los tienen: para ellos se aplican
 // regex sobre el comando recortado a 500 caracteres, que pueden fallar en
 // comandos largos (ver docs/evaluacion-agente.md).
-import { readdirSync, readFileSync } from 'node:fs';
+import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -154,6 +154,8 @@ for (const [session, ev] of bySession) {
 }
 
 console.table(rows);
+// Para el recordatorio semanal (recordatorios.mjs inicio): cuándo se corrió por última vez.
+try { writeFileSync(join(dirname(fileURLToPath(import.meta.url)), '.ultima-metricas'), new Date().toISOString()); } catch { /* no crítico */ }
 const total = (k) => rows.reduce((n, r) => n + r[k], 0);
 const salidas = total('salidas');
 const commits = total('commits');

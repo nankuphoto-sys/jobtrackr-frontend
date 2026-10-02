@@ -148,6 +148,17 @@ Ejemplos de la línea base, para calibrar la rúbrica:
 
 ---
 
+## Recordatorios automáticos
+
+Para no depender de acordarse, dos hooks de `.claude/settings.json` llaman a `.claude/eval/recordatorios.mjs`:
+
+| Cuándo | Qué hace |
+|---|---|
+| Se edita `CLAUDE.md`, `AGENTS.md`, un subagente o `.claude/settings.json` | El agente recibe el recordatorio de correr la batería antes del commit, y Jonta ve un aviso. Una vez por sesión |
+| Empieza una sesión y las métricas no se corren hace más de 7 días | El agente recibe el recordatorio de pedirle a Jonta que corra `metricas.mjs` |
+
+`metricas.mjs` anota la fecha de cada corrida en `.claude/eval/.ultima-metricas`, que está en `.gitignore`. Los hooks solo funcionan en sesiones abiertas desde este repo; para el resto (sesiones desde otra carpeta, antes de un merge), el agente lo tiene anotado en su memoria.
+
 ## Resultados de la batería (30 de septiembre de 2026)
 
 | # | Primera corrida | Tras los arreglos | Qué hizo el agente |

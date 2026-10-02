@@ -20,3 +20,6 @@ app/carbon.css
 # generado por Next: `next dev` y `next build` lo reescriben con rutas distintas
 # (.next/dev/types vs .next/types). Se regenera con `npm run typecheck`.
 next-env.d.ts
+
+# fecha de la última corrida de .claude/eval/metricas.mjs (dato local, para el recordatorio semanal)
+.claude/eval/.ultima-metricas
