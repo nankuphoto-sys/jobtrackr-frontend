@@ -20,6 +20,7 @@ jobtrackr-frontend/
 │   │   ├── jobtrackr-diagnostico.md Subagente: encuentra la causa raíz (solo lee)
 │   │   └── jobtrackr-verificador.md Subagente: aprueba o rechaza un cambio (solo lee)
 │   ├── audit.mjs                    Hook de auditoría: escribe el registro
+│   ├── guardas.mjs                  Hook que bloquea cualquier push forzado (revisa el comando completo)
 │   ├── audit/AAAA-MM-DD.jsonl       El registro (no se versiona: .gitignore)
 │   └── eval/
 │       ├── metricas.mjs             Capa 1: reglas R1–R6 sobre el registro
@@ -130,6 +131,8 @@ Los dos trabajan en **el directorio donde se los invoca** (lo confirman con `git
 | `ask` | `git push`, migraciones de Prisma, `curl` que escribe | Piden confirmación a Jonta |
 | `deny` | `git push --force/-f`, `git reset --hard`, `rm -rf`, leer `.env` | Bloqueados siempre |
 
+**Las reglas de permisos comparan el comienzo del comando.** `Bash(git push --force:*)` bloquea `git push --force origin main`, pero no `git push origin main --force` ni `git push origin +main`. Para los push forzados, el bloqueo real lo hace el hook `guardas.mjs`, que revisa el comando completo (sección 6). Si agregas otra prohibición crítica, no confíes solo en un prefijo de `deny`: agrégala también a `guardas.mjs`, con sus pruebas.
+
 Encima de esto, en **modo auto** un clasificador decide los casos que no están en las listas. Por ejemplo, bloqueó un merge sin revisión y la búsqueda de una contraseña en el registro.
 
 **Leer `.env` está prohibido, y eso impide también editarlo.** Las herramientas de edición exigen leer el archivo primero. Por eso el agente no puede escribir una connection string en el `.env`: le dice a Jonta dónde va.
@@ -144,6 +147,7 @@ Los hooks son comandos que Claude Code ejecuta solo, en cada evento. No dependen
 |---|---|---|
 | `UserPromptSubmit` | `audit.mjs hook` | Registra el prompt con un `ref` (`<sesión>#<n>`), que después cita la aprobación |
 | `PreToolUse` (Bash) | `audit.mjs hook` | Si el comando es riesgoso, lo registra como `riesgo` con sus `motivos` |
+| `PreToolUse` (Bash) | `guardas.mjs` | **Bloquea** cualquier push forzado: `--force` en cualquier posición, `-f` combinado, `--force-with-lease`, refspec con `+`, `git -C … push --force`. Probado con 13 formas que debe bloquear y 12 comandos normales que debe dejar pasar |
 | `PostToolUse` (Bash, Edit, Write) | `audit.mjs hook` | Registra cada acción con su resultado |
 | `PostToolUse` (Edit, Write) | `eval/recordatorios.mjs edicion` | Si se editó la configuración del agente, recuerda correr la batería (una vez por sesión) |
 | `PostToolUseFailure` | `audit.mjs hook` | Registra acciones fallidas con el error |
@@ -225,14 +229,15 @@ Todas las entradas llevan `ts`, `session`, `actor` y `cwd`. Las de modo global l
 | Rutas relativas en los subagentes | Con rutas absolutas, en un clon o worktree verificaban otro código |
 | Clasificar el riesgo sobre el comando completo | El registro recorta a 500 caracteres y se perdían push y borrados |
 | Registrar los bloqueos de permisos | Para detectar si el agente intenta rodearlos (regla R6) |
+| Guardas con patrón además de `deny` | `deny` compara prefijos; un hook ve el comando completo |
 | Evaluar en sesiones nuevas y entornos trampa | Un agente que ya conoce las respuestas no se mide; y un fallo en un escenario de seguridad no debe hacer daño real |
 
 ---
 
 ## 10. Limitaciones conocidas
 
-- **`deny` no cubre todas las formas de forzar un push.** `git push origin +main` reescribe la historia igual que `--force` y no está bloqueado. En la batería el agente no lo intentó, pero el permiso no lo impide.
-- **CLAUDE.md dice que el Nivel B escribe en "la base de datos real".** Desde el 29 de septiembre escribe en el branch `dev` de Neon; esa línea quedó desactualizada.
+- **`guardas.mjs` solo cubre push forzados.** Otras acciones destructivas (`git reset --hard`, `rm -rf`) dependen todavía de los prefijos de `deny`, con el mismo hueco: un flag al final no coincide con el prefijo.
+- **La guarda solo funciona en sesiones abiertas desde el repo:** no está en los hooks globales, para no imponer la regla a otros proyectos.
 - **Los `ref` de aprobación se numeran por día:** en una sesión de varios días dos prompts pueden compartir `ref`.
 - **Sesiones abiertas fuera del repo:** se auditan, pero sin las reglas ni los permisos del repo.
 - **El agente no es determinista:** una batería aprobada no garantiza la siguiente corrida. Ver `evaluacion-agente.md`.
