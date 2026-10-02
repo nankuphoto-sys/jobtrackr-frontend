@@ -2,7 +2,9 @@
 
 Cómo el agente de Claude Code resuelve una tarea típica en este proyecto (por ejemplo, "el botón Reintentar no hace nada"), qué pieza de la configuración interviene en cada paso y dónde puede fallar.
 
-Piezas involucradas:
+> Cómo está construida cada pieza (subagentes, reglas, permisos, hooks y cómo extenderlos): [`agentes.md`](agentes.md). Cómo se mide el desempeño: [`evaluacion-agente.md`](evaluacion-agente.md).
+
+Piezas involucradas (resumen; el detalle está en `agentes.md`):
 
 | Pieza | Archivo | Qué hace |
 |---|---|---|
