@@ -21,6 +21,12 @@ Next.js 16 (App Router) + TypeScript + Tailwind CSS para JobTrackr. Plan complet
 2. Copia `.env.example` a `.env.local` y ajusta `NEXT_PUBLIC_API_URL` si el backend corre en otro puerto.
 3. `npm run dev` — abre `http://localhost:3000`.
 
+## Pegar oferta (extractor con IA local)
+
+El botón **Pegar oferta** del tablero abre un modal: pegas el texto de una oferta, **Extraer con IA local** la manda al backend, que la procesa con un modelo local ([Ollama](https://ollama.com)), y vuelve un formulario prellenado y editable (con los chips del stack). **Crear tarjeta** usa la misma creación de siempre, en "Por aplicar". Nada se guarda sin que lo revises.
+
+Solo funciona con el **backend corriendo en tu PC** y Ollama abierto; la instalación está en el [README del backend](https://github.com/nankuphoto-sys/jobtrackr-backend#extractor-de-ofertas-con-ia-local-opcional). En producción el extractor está apagado: el modal lo avisa y deja llenar la tarjeta a mano.
+
 ## Tests
 
 - `npm test` — tests unitarios (Vitest) de `lib/api.ts` y `lib/auth.ts`. No requieren nada corriendo.

@@ -52,12 +52,29 @@ jobs:
         with:
           path: frontend
 
+      # Un cambio que toca los dos repos (p. ej. el extractor de ofertas) usa la
+      # misma rama en ambos: si el backend tiene una rama con el nombre de la de
+      # este PR, los e2e corren contra esa; si no, contra main. El nombre de la
+      # rama va por env (no interpolado en el script) para evitar inyección.
+      - name: Elegir rama del backend
+        id: backend-ref
+        env:
+          RAMA_PR: ${{ github.head_ref }}
+        run: |
+          if [ -n "$RAMA_PR" ] && git ls-remote --exit-code --heads https://github.com/nankuphoto-sys/jobtrackr-backend.git "refs/heads/$RAMA_PR" > /dev/null; then
+            echo "ref=$RAMA_PR" >> "$GITHUB_OUTPUT"
+          else
+            echo "ref=main" >> "$GITHUB_OUTPUT"
+          fi
+          echo "Backend: $(tail -1 "$GITHUB_OUTPUT")"
+
       # El backend vive en un repo separado (jobtrackr-backend). Es público,
       # así que se puede clonar sin ningún token adicional.
       - name: Checkout backend
         uses: actions/checkout@v4
         with:
           repository: nankuphoto-sys/jobtrackr-backend
+          ref: ${{ steps.backend-ref.outputs.ref }}
           path: backend
 
       - uses: actions/setup-node@v4
