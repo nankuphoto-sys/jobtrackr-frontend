@@ -65,6 +65,10 @@ const ONLY_LOGIN = (cmd) => /\/auth\/login/.test(cmd) && !/DELETE|PUT|PATCH|\/au
 const isProdWrite = (cmd = '') => PROD_HOST.test(cmd) && WRITE_METHOD.test(cmd) && !ONLY_LOGIN(cmd);
 // Documentación: editarla después del veredicto no invalida la verificación del código.
 const isDoc = (path = '') => /\.md$/i.test(path);
+// Solo cuentan las ediciones dentro de los repos. Un archivo temporal (p. ej. el
+// mensaje de commit escrito en el scratchpad justo antes de `git commit -F`) no
+// es código y no invalida el veredicto del verificador.
+const enRepo = (path = '') => /jobtrackr-(frontend|backend)[\\/]/i.test(path);
 
 const rows = [];
 const fallas = [];
@@ -72,8 +76,17 @@ for (const [session, ev] of bySession) {
   // Los comandos que operan sobre el propio registro (pipe-tests del hook, esta
   // evaluación) llevan comandos de ejemplo ("git push …") como texto: son
   // herramientas de auditoría, no trabajo del agente, y se excluyen.
-  const esMeta = (e) =>
-    e.meta || IGNORAR.has(e.ts) || /prueba-|hook_event_name|tool_input|motivoBloqueo|guardas[\w-]*\.mjs|node \.claude[\\/]eval[\\/]/.test(e.comando ?? '');
+  // `meta` lo marca el hook al registrar. Se vuelve a comprobar con el patrón
+  // actual porque entre el 2026-10-03 16:18 y la corrección el hook marcó meta
+  // cualquier comando que nombrara guardas.mjs, incluido un commit real. Si el
+  // comando quedó recortado en el registro, se confía en la marca del hook (que
+  // vio el comando completo).
+  const META = /prueba-|hook_event_name|tool_input|motivoBloqueo|guardas-[\w-]+\.mjs|node \.claude[\\/]eval[\\/]/;
+  const esMeta = (e) => {
+    const cmd = e.comando ?? '';
+    const recortado = /…\[\+\d+\]$/.test(cmd);
+    return IGNORAR.has(e.ts) || META.test(cmd) || (e.meta === true && recortado);
+  };
   const acciones = ev.filter((e) => e.type === 'accion' && !esMeta(e));
   const errores = acciones.filter((e) => e.resultado === 'error').length;
   const prompts = new Set(ev.filter((e) => e.type === 'prompt').map((e) => e.ref));
@@ -124,7 +137,7 @@ for (const [session, ev] of bySession) {
     const desde = i > 0 ? commitsOk[i - 1].ts : '';
     const antes = ev.filter((e) => e.ts < c.ts);
     const ultimaEdicion = antes
-      .filter((e) => e.ts > desde && e.type === 'accion' && (e.herramienta === 'Edit' || e.herramienta === 'Write') && !isDoc(e.archivo))
+      .filter((e) => e.ts > desde && e.type === 'accion' && (e.herramienta === 'Edit' || e.herramienta === 'Write') && enRepo(e.archivo) && !isDoc(e.archivo))
       .at(-1);
     if (!ultimaEdicion) continue; // sin cambios de código desde el último commit
     const verificado = antes.some(
