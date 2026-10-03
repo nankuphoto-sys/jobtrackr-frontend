@@ -48,6 +48,12 @@
 .cds--btn--primary.jt-btn-ink:active {
   background-color: #030712;
 }
+/* Acción secundaria del header ("Pegar oferta"): texto en tinta, no el azul de link de Carbon. */
+.cds--btn--ghost.jt-btn-ghost-ink,
+.cds--btn--ghost.jt-btn-ghost-ink .cds--btn__icon {
+  color: #111827;
+  fill: #111827;
+}
 
 /* Panel de cuenta del header: Carbon lo hace de alto completo; con dos opciones
    alcanza con un desplegable del tamaño de su contenido. Como el contenido del

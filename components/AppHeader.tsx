@@ -12,7 +12,7 @@ import {
   SkipToContent,
   Button,
 } from '@carbon/react';
-import { Add, Logout, UserAvatar } from '@carbon/icons-react';
+import { Add, Logout, Paste, UserAvatar } from '@carbon/icons-react';
 import { Logo } from '@/components/Logo';
 import { StatusStrip } from '@/components/StatusStrip';
 import { clearToken, getUserEmail } from '@/lib/auth';
@@ -40,11 +40,14 @@ export function AppHeader({
   current,
   applications,
   onCreate,
+  onPaste,
 }: {
   current: 'board' | 'account';
   applications: JobApplication[];
   /** Sin onCreate (p. ej. desde /account) el botón lleva al tablero con el modal abierto. */
   onCreate?: () => void;
+  /** Igual para "Pegar oferta" (extractor con IA local): sin él, va a /applications?pegar=1. */
+  onPaste?: () => void;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -79,6 +82,11 @@ export function AppHeader({
     else router.push('/applications?nueva=1');
   }
 
+  function handlePaste() {
+    if (onPaste) onPaste();
+    else router.push('/applications?pegar=1');
+  }
+
   function handleLogout() {
     clearToken();
     router.push('/login');
@@ -98,7 +106,11 @@ export function AppHeader({
         {/* Separador que empuja todo a la derecha. No va como ml-auto en el botón:
             en mobile el botón está oculto (display:none) y su margen no empujaría nada. */}
         <div className="flex-1" aria-hidden="true" />
-        <div className="hidden items-center pr-3 sm:flex">
+        <div className="hidden items-center gap-2 pr-3 sm:flex">
+          {/* Secundaria: la acción principal sigue siendo "Nueva postulación". */}
+          <Button size="sm" kind="ghost" renderIcon={Paste} onClick={handlePaste} className="jt-btn-ghost-ink">
+            Pegar oferta
+          </Button>
           <Button size="sm" renderIcon={Add} onClick={handleCreate} className="jt-btn-ink">
             Nueva postulación
           </Button>

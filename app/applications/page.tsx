@@ -21,7 +21,7 @@ import {
   SkeletonText,
   SkeletonPlaceholder,
 } from '@carbon/react';
-import { Add, WarningFilled } from '@carbon/icons-react';
+import { Add, Paste, WarningFilled } from '@carbon/icons-react';
 import { api, ApiError } from '@/lib/api';
 import { AppHeader, MAIN_CONTENT_ID } from '@/components/AppHeader';
 import { getToken } from '@/lib/auth';
@@ -34,8 +34,9 @@ import { CardContent } from '@/components/KanbanCard';
 import { KanbanColumn } from '@/components/KanbanColumn';
 import { StatsBar } from '@/components/StatsBar';
 import { ApplicationModal } from '@/components/ApplicationModal';
+import { PegarOfertaModal } from '@/components/PegarOfertaModal';
 
-type ModalState = { mode: 'create' } | { mode: 'edit'; app: JobApplication } | null;
+type ModalState = { mode: 'create' } | { mode: 'paste' } | { mode: 'edit'; app: JobApplication } | null;
 
 /**
  * El coordinate getter por defecto de dnd-kit mueve la tarjeta 25px por
@@ -128,12 +129,12 @@ export default function ApplicationsPage() {
 
   // Solo actualiza el estado en los callbacks de la promesa (asíncronos), así se
   // puede llamar desde el efecto de montaje sin renders en cascada.
-  function fetchApplications({ openCreate = false } = {}) {
+  function fetchApplications({ abrir = null as ModalState } = {}) {
     api
       .get<JobApplication[]>('/applications')
       .then((apps) => {
         setApplications(apps);
-        if (openCreate) setModalState({ mode: 'create' });
+        if (abrir) setModalState(abrir);
       })
       .catch((err) => setLoadError(err instanceof ApiError ? err.message : 'No se pudo conectar con el servidor'))
       .finally(() => setLoading(false));
@@ -151,12 +152,13 @@ export default function ApplicationsPage() {
       router.replace('/login');
       return;
     }
-    // "Nueva postulación" desde otra página (p. ej. /account) llega como ?nueva=1:
-    // el modal se abre una vez cargado el tablero, y se limpia la URL para que
-    // recargar no lo vuelva a abrir.
-    const openCreate = new URLSearchParams(window.location.search).has('nueva');
-    if (openCreate) router.replace('/applications');
-    fetchApplications({ openCreate }); // `loading` ya arranca en true: no hace falta setearlo acá.
+    // "Nueva postulación" / "Pegar oferta" desde otra página (p. ej. /account)
+    // llegan como ?nueva=1 / ?pegar=1: el modal se abre una vez cargado el
+    // tablero, y se limpia la URL para que recargar no lo vuelva a abrir.
+    const params = new URLSearchParams(window.location.search);
+    const abrir: ModalState = params.has('pegar') ? { mode: 'paste' } : params.has('nueva') ? { mode: 'create' } : null;
+    if (abrir) router.replace('/applications');
+    fetchApplications({ abrir }); // `loading` ya arranca en true: no hace falta setearlo acá.
   }, [router]);
 
   async function handleStatusChange(id: string, status: ApplicationStatus) {
@@ -214,7 +216,12 @@ export default function ApplicationsPage() {
   return (
     <div style={{ background: 'var(--cds-background)' }} className="min-h-screen pb-24 pt-12 sm:pb-6">
       {/* Header de Carbon es position:fixed — pt-12 (48px) en el contenedor compensa su altura. */}
-      <AppHeader current="board" applications={applications} onCreate={() => setModalState({ mode: 'create' })} />
+      <AppHeader
+        current="board"
+        applications={applications}
+        onCreate={() => setModalState({ mode: 'create' })}
+        onPaste={() => setModalState({ mode: 'paste' })}
+      />
 
       <main id={MAIN_CONTENT_ID} className="mx-auto max-w-[1180px]">
         {hasBoard && applications.length > 0 && (
@@ -307,13 +314,18 @@ export default function ApplicationsPage() {
           className="fixed inset-x-0 bottom-0 border-t p-3.5 sm:hidden"
           style={{ borderColor: 'var(--cds-border-subtle-00)', background: 'var(--cds-layer)' }}
         >
-          <Button renderIcon={Add} onClick={() => setModalState({ mode: 'create' })} className="jt-btn-ink !w-full !max-w-none justify-center">
-            Nueva postulación
-          </Button>
+          <div className="grid grid-cols-[auto_1fr] gap-2">
+            <Button kind="tertiary" renderIcon={Paste} onClick={() => setModalState({ mode: 'paste' })} hasIconOnly iconDescription="Pegar oferta" tooltipPosition="top" />
+            <Button renderIcon={Add} onClick={() => setModalState({ mode: 'create' })} className="jt-btn-ink !w-full !max-w-none justify-center">
+              Nueva postulación
+            </Button>
+          </div>
         </div>
       )}
 
-      {modalState && (
+      {modalState?.mode === 'paste' && <PegarOfertaModal onClose={() => setModalState(null)} onCreated={handleSaved} />}
+
+      {modalState && modalState.mode !== 'paste' && (
         <ApplicationModal
           app={modalState.mode === 'edit' ? modalState.app : null}
           onClose={() => setModalState(null)}
