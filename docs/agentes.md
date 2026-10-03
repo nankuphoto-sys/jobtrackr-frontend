@@ -151,6 +151,7 @@ Los hooks son comandos que Claude Code ejecuta solo, en cada evento. No dependen
 | `PreToolUse` (Bash, PowerShell) | `audit.mjs hook` | Si el comando es riesgoso, lo registra como `riesgo` con sus `motivos` |
 | `PreToolUse` (Bash, PowerShell) | `guardas.mjs` | **Bloquea** push forzado (`--force` en cualquier posición, `-f` combinado, `--force-with-lease`, refspec con `+`, `git -C … push --force`), `git reset --hard` en cualquier posición y borrado recursivo (`rm -rf`/`-fr`/`-r -f`, `Remove-Item -Recurse` y sus alias). Entiende la sintaxis de PowerShell (`if ($?) { … }`, `& git`) e ignora los separadores dentro de comillas (un mensaje de commit que dice "rm -rf" no se bloquea). Probado con 26 formas que debe bloquear y 16 comandos normales que debe dejar pasar |
 | `PostToolUse` (Bash, PowerShell, Edit, Write) | `audit.mjs hook` | Registra cada acción con su resultado |
+| `PostToolUse` (AskUserQuestion) | `audit.mjs hook` | Registra la respuesta de Jonta a una pregunta con opciones como `prompt` (`via: "pregunta"`), con su `ref`: así una aprobación dada eligiendo una opción también se puede citar en la `decision` |
 | `PostToolUse` (Edit, Write) | `eval/recordatorios.mjs edicion` | Si se editó la configuración del agente, recuerda correr la batería (una vez por sesión) |
 | `PostToolUseFailure` | `audit.mjs hook` | Registra acciones fallidas con el error |
 | `SubagentStop` | `audit.mjs hook` | Registra el informe final de cada subagente |
@@ -240,6 +241,7 @@ Todas las entradas llevan `ts`, `session`, `actor` y `cwd`. Las de modo global l
 
 - **`guardas.mjs` reconoce patrones, no entiende el comando.** Un borrado hecho desde un script (`node -e "fs.rmSync(...)"`) o con otra herramienta no lo ve.
 - **La guarda y las reglas de `deny`/`ask` también están en `~/.claude/settings.json` (global)** desde el 2026-10-03, porque las sesiones abiertas desde otra carpeta (p. ej. `desktop-tutorial`) no cargaban las del repo y quedaban sin protección. Consecuencia: aplican también a otros proyectos de la PC. El hook global apunta a `jobtrackr-frontend/.claude/guardas.mjs`, así que corre la versión de la rama que esté activa en ese repo.
+- **La forma de la respuesta de AskUserQuestion no está documentada.** El hook busca las respuestas en `tool_input.answers` y `tool_response.answers`; si no las encuentra guarda la respuesta cruda con `sin_formato: true`. Hay que revisar la primera respuesta real en el log. Antes del 2026-10-03 estas respuestas no se registraban: las aprobaciones dadas así no tienen `ref`.
 - **Los `ref` de aprobación se numeran por día:** en una sesión de varios días dos prompts pueden compartir `ref`.
 - **Sesiones abiertas fuera del repo:** se auditan y tienen la guarda y las reglas globales (push, migraciones, borrados, `.env`), pero no el resto de la configuración del repo (`allow`, recordatorios).
 - **El agente no es determinista:** una batería aprobada no garantiza la siguiente corrida. Ver `evaluacion-agente.md`.

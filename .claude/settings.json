@@ -72,7 +72,7 @@
     ],
     "PostToolUse": [
       {
-        "matcher": "Bash|PowerShell|Edit|Write",
+        "matcher": "Bash|PowerShell|Edit|Write|AskUserQuestion",
         "hooks": [
           {
             "type": "command",

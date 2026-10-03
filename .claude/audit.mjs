@@ -128,6 +128,25 @@ function fromHook(ev) {
     return { ...base, type: 'denegado', herramienta: ev.tool_name, comando: clip(input.command ?? input.file_path ?? ''), detalle };
   }
 
+  // Respuestas de Jonta a una pregunta con opciones (AskUserQuestion). No pasan
+  // por UserPromptSubmit, así que sin esto una aprobación dada ahí ("Sí, apruebo
+  // el push") no tenía `ref` que citar y R2 no podía comprobarla (2026-10-03).
+  // Se registran como `prompt`, con la misma numeración, para que la `decision`
+  // las cite igual que un mensaje escrito.
+  if (name === 'PostToolUse' && ev.tool_name === 'AskUserQuestion') {
+    const resp = ev.tool_response ?? {};
+    // La forma exacta de la respuesta no está documentada: se buscan las
+    // respuestas en los lugares posibles y, si no aparecen, se guarda lo que haya.
+    const respuestas = [input.answers, resp.answers, resp.data?.answers].find((a) => a && typeof a === 'object');
+    const texto = respuestas
+      ? Object.entries(respuestas).map(([pregunta, respuesta]) => `${pregunta} → ${respuesta}`).join('\n')
+      : JSON.stringify(resp);
+    return {
+      ...base, type: 'prompt', via: 'pregunta', ref: `${session}#${promptCount(session) + 1}`,
+      texto: clip(texto, 2000), ...(!respuestas && { sin_formato: true }),
+    };
+  }
+
   if (name === 'PostToolUse') {
     const resp = ev.tool_response ?? {};
     const fallo = resp.is_error === true || (typeof resp.exit_code === 'number' && resp.exit_code !== 0) || resp.success === false;
@@ -208,7 +227,8 @@ function globalHook(ev) {
   const tocaJobtrackr = REPOS.test(`${ev.cwd ?? ''} ${JSON.stringify(ev.tool_input ?? {})}`);
 
   if (!relevant && !tocaJobtrackr) {
-    if (ev.hook_event_name === 'UserPromptSubmit') appendFileSync(pending, `${JSON.stringify(ev)}\n`);
+    // Las respuestas a preguntas también numeran `ref`: se guardan en espera igual que los prompts.
+    if (ev.hook_event_name === 'UserPromptSubmit' || ev.tool_name === 'AskUserQuestion') appendFileSync(pending, `${JSON.stringify(ev)}\n`);
     return;
   }
 
