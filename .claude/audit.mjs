@@ -45,8 +45,10 @@ const RISKY = {
 // comandos de ejemplo ("git push …") como texto y no son trabajo del agente.
 // (hook_event_name y tool_input son los campos de un evento de hook simulado;
 // motivoBloqueo/guardas.mjs aparecen en las pruebas del hook guardián.)
-// guardas[\w-]*\.mjs incluye los archivos de casos de prueba (guardas-casos.mjs).
-const isMeta = (cmd) => /hook_event_name|tool_input|prueba-|motivoBloqueo|guardas[\w-]*\.mjs/.test(cmd);
+// guardas-<algo>.mjs son archivos de casos de prueba (guardas-casos.mjs). El
+// guardas.mjs real NO: un `git add .claude/guardas.mjs && git commit` es trabajo
+// real, y marcarlo meta lo escondía de la evaluación (pasó el 2026-10-03).
+const isMeta = (cmd) => /hook_event_name|tool_input|prueba-|motivoBloqueo|guardas-[\w-]+\.mjs/.test(cmd);
 
 function riskReasons(cmd) {
   if (isMeta(cmd)) return [];
