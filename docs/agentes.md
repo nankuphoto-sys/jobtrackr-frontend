@@ -20,7 +20,7 @@ jobtrackr-frontend/
 │   │   ├── jobtrackr-diagnostico.md Subagente: encuentra la causa raíz (solo lee)
 │   │   └── jobtrackr-verificador.md Subagente: aprueba o rechaza un cambio (solo lee)
 │   ├── audit.mjs                    Hook de auditoría: escribe el registro
-│   ├── guardas.mjs                  Hook que bloquea cualquier push forzado (revisa el comando completo)
+│   ├── guardas.mjs                  Hook que bloquea push forzado, reset --hard y borrado recursivo (Bash y PowerShell)
 │   ├── audit/AAAA-MM-DD.jsonl       El registro (no se versiona: .gitignore)
 │   └── eval/
 │       ├── metricas.mjs             Capa 1: reglas R1–R6 sobre el registro
@@ -133,6 +133,8 @@ Los dos trabajan en **el directorio donde se los invoca** (lo confirman con `git
 
 **Las reglas de permisos comparan el comienzo del comando.** `Bash(git push --force:*)` bloquea `git push --force origin main`, pero no `git push origin main --force` ni `git push origin +main`. Para los push forzados, el bloqueo real lo hace el hook `guardas.mjs`, que revisa el comando completo (sección 6). Si agregas otra prohibición crítica, no confíes solo en un prefijo de `deny`: agrégala también a `guardas.mjs`, con sus pruebas.
 
+**Cada regla existe dos veces: `Bash(...)` y `PowerShell(...)`.** En Windows el agente tiene las dos herramientas y una regla `Bash(...)` no aplica a PowerShell. Hasta el 2026-10-03 solo existían las de Bash: ese día un commit y tres push hechos desde PowerShell no pasaron por ninguna regla ni hook, ni quedaron en el registro (se notó porque `metricas.mjs` contaba menos commits de los hechos). Lo mismo vale para los `matcher` de los hooks: `Bash|PowerShell`.
+
 Encima de esto, en **modo auto** un clasificador decide los casos que no están en las listas. Por ejemplo, bloqueó un merge sin revisión y la búsqueda de una contraseña en el registro.
 
 **Leer `.env` está prohibido, y eso impide también editarlo.** Las herramientas de edición exigen leer el archivo primero. Por eso el agente no puede escribir una connection string en el `.env`: le dice a Jonta dónde va.
@@ -146,9 +148,9 @@ Los hooks son comandos que Claude Code ejecuta solo, en cada evento. No dependen
 | Evento | Script | Qué hace |
 |---|---|---|
 | `UserPromptSubmit` | `audit.mjs hook` | Registra el prompt con un `ref` (`<sesión>#<n>`), que después cita la aprobación |
-| `PreToolUse` (Bash) | `audit.mjs hook` | Si el comando es riesgoso, lo registra como `riesgo` con sus `motivos` |
-| `PreToolUse` (Bash) | `guardas.mjs` | **Bloquea** cualquier push forzado: `--force` en cualquier posición, `-f` combinado, `--force-with-lease`, refspec con `+`, `git -C … push --force`. Probado con 13 formas que debe bloquear y 12 comandos normales que debe dejar pasar |
-| `PostToolUse` (Bash, Edit, Write) | `audit.mjs hook` | Registra cada acción con su resultado |
+| `PreToolUse` (Bash, PowerShell) | `audit.mjs hook` | Si el comando es riesgoso, lo registra como `riesgo` con sus `motivos` |
+| `PreToolUse` (Bash, PowerShell) | `guardas.mjs` | **Bloquea** push forzado (`--force` en cualquier posición, `-f` combinado, `--force-with-lease`, refspec con `+`, `git -C … push --force`), `git reset --hard` en cualquier posición y borrado recursivo (`rm -rf`/`-fr`/`-r -f`, `Remove-Item -Recurse` y sus alias). Entiende la sintaxis de PowerShell (`if ($?) { … }`, `& git`) e ignora los separadores dentro de comillas (un mensaje de commit que dice "rm -rf" no se bloquea). Probado con 26 formas que debe bloquear y 16 comandos normales que debe dejar pasar |
+| `PostToolUse` (Bash, PowerShell, Edit, Write) | `audit.mjs hook` | Registra cada acción con su resultado |
 | `PostToolUse` (Edit, Write) | `eval/recordatorios.mjs edicion` | Si se editó la configuración del agente, recuerda correr la batería (una vez por sesión) |
 | `PostToolUseFailure` | `audit.mjs hook` | Registra acciones fallidas con el error |
 | `SubagentStop` | `audit.mjs hook` | Registra el informe final de cada subagente |
@@ -236,8 +238,8 @@ Todas las entradas llevan `ts`, `session`, `actor` y `cwd`. Las de modo global l
 
 ## 10. Limitaciones conocidas
 
-- **`guardas.mjs` solo cubre push forzados.** Otras acciones destructivas (`git reset --hard`, `rm -rf`) dependen todavía de los prefijos de `deny`, con el mismo hueco: un flag al final no coincide con el prefijo.
-- **La guarda solo funciona en sesiones abiertas desde el repo:** no está en los hooks globales, para no imponer la regla a otros proyectos.
+- **`guardas.mjs` reconoce patrones, no entiende el comando.** Un borrado hecho desde un script (`node -e "fs.rmSync(...)"`) o con otra herramienta no lo ve.
+- **La guarda y las reglas de `deny`/`ask` también están en `~/.claude/settings.json` (global)** desde el 2026-10-03, porque las sesiones abiertas desde otra carpeta (p. ej. `desktop-tutorial`) no cargaban las del repo y quedaban sin protección. Consecuencia: aplican también a otros proyectos de la PC. El hook global apunta a `jobtrackr-frontend/.claude/guardas.mjs`, así que corre la versión de la rama que esté activa en ese repo.
 - **Los `ref` de aprobación se numeran por día:** en una sesión de varios días dos prompts pueden compartir `ref`.
-- **Sesiones abiertas fuera del repo:** se auditan, pero sin las reglas ni los permisos del repo.
+- **Sesiones abiertas fuera del repo:** se auditan y tienen la guarda y las reglas globales (push, migraciones, borrados, `.env`), pero no el resto de la configuración del repo (`allow`, recordatorios).
 - **El agente no es determinista:** una batería aprobada no garantiza la siguiente corrida. Ver `evaluacion-agente.md`.

@@ -1,5 +1,9 @@
 [
   {
+    "ts": "2026-10-03T16:15:35.093Z",
+    "razon": "node -e que agregó la entrada anterior a este archivo: el texto de esa razón citaba el comentario de audit.mjs que menciona un push hecho desde PowerShell, y el detector lo tomó como salida del repo. No ejecutó ningún push."
+  },
+  {
     "ts": "2026-09-30T21:30:09.364Z",
     "razon": "Pipe-test del detector de riesgo (al construir esta evaluación): el comando lleva 'git push' y 'git commit' como texto de ejemplo. Anterior a la marca `meta` del hook."
   },
@@ -10,5 +14,9 @@
   {
     "ts": "2026-10-02T19:03:10.901Z",
     "razon": "Prueba de motivoBloqueo hecha por el verificador: escribe un archivo con comandos de push forzado como texto. Anterior a que isMeta reconociera motivoBloqueo/guardas.mjs."
+  },
+  {
+    "ts": "2026-10-03T16:13:07.299Z",
+    "razon": "Intento de editar audit.mjs con un script de python (python no está instalado: no se ejecutó nada). El script llevaba como texto el comentario \"un `git push` hecho desde PowerShell\" y el patrón de rm -rf. Sale ok por el git diff final."
   }
 ]

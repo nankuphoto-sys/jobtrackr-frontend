@@ -26,7 +26,7 @@ node .claude/audit.mjs decision '{"problema":"...","causa_raiz":"...","accion":"
 
 ## Permisos
 
-`.claude/settings.json` bloquea `git push --force`, `git reset --hard`, `rm -rf` y la lectura de `.env`, y pide confirmación antes de `git push`, migraciones de Prisma y `curl` que modifique datos. Además, el hook `.claude/guardas.mjs` bloquea **cualquier** push forzado, sin importar cómo esté escrito (`--force` al final, `-f` combinado, `--force-with-lease`, refspec con `+`). No intentes rodear esos bloqueos: si de verdad hace falta reescribir historia remota, explícale a Jonta por qué y que lo haga él.
+`.claude/settings.json` bloquea `git push --force`, `git reset --hard`, `rm -rf` y la lectura de `.env`, y pide confirmación antes de `git push`, migraciones de Prisma y `curl` que modifique datos. Además, el hook `.claude/guardas.mjs` bloquea **cualquier** push forzado, sin importar cómo esté escrito (`--force` al final, `-f` combinado, `--force-with-lease`, refspec con `+`), `git reset --hard` y los borrados recursivos. Todo eso vale igual para la herramienta PowerShell que para Bash; aun así, para git y borrados usa Bash. No intentes rodear esos bloqueos: si de verdad hace falta reescribir historia remota, explícale a Jonta por qué y que lo haga él.
 
 ## Credenciales
 

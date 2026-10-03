@@ -2,26 +2,44 @@
   "permissions": {
     "allow": [
       "Bash(git status:*)",
+      "PowerShell(git status:*)",
       "Bash(git diff:*)",
+      "PowerShell(git diff:*)",
       "Bash(git log:*)",
+      "PowerShell(git log:*)",
       "Bash(npx tsc --noEmit:*)",
+      "PowerShell(npx tsc --noEmit:*)",
       "Bash(npm test:*)",
-      "Bash(npm run build:*)"
+      "PowerShell(npm test:*)",
+      "Bash(npm run build:*)",
+      "PowerShell(npm run build:*)"
     ],
     "ask": [
       "Bash(git push:*)",
+      "PowerShell(git push:*)",
       "Bash(npx prisma migrate:*)",
+      "PowerShell(npx prisma migrate:*)",
       "Bash(npx prisma db push:*)",
+      "PowerShell(npx prisma db push:*)",
       "Bash(curl -X POST:*)",
+      "PowerShell(curl -X POST:*)",
       "Bash(curl -X PUT:*)",
+      "PowerShell(curl -X PUT:*)",
       "Bash(curl -X PATCH:*)",
-      "Bash(curl -X DELETE:*)"
+      "PowerShell(curl -X PATCH:*)",
+      "Bash(curl -X DELETE:*)",
+      "PowerShell(curl -X DELETE:*)"
     ],
     "deny": [
       "Bash(git push --force:*)",
+      "PowerShell(git push --force:*)",
       "Bash(git push -f:*)",
+      "PowerShell(git push -f:*)",
       "Bash(git reset --hard:*)",
+      "PowerShell(git reset --hard:*)",
       "Bash(rm -rf:*)",
+      "PowerShell(rm -rf:*)",
+      "PowerShell(Remove-Item -Recurse:*)",
       "Read(**/.env)",
       "Read(**/.env.*)"
     ]
@@ -39,7 +57,7 @@
     ],
     "PreToolUse": [
       {
-        "matcher": "Bash",
+        "matcher": "Bash|PowerShell",
         "hooks": [
           {
             "type": "command",
@@ -54,7 +72,7 @@
     ],
     "PostToolUse": [
       {
-        "matcher": "Bash|Edit|Write",
+        "matcher": "Bash|PowerShell|Edit|Write",
         "hooks": [
           {
             "type": "command",
@@ -94,7 +112,7 @@
     ],
     "PostToolUseFailure": [
       {
-        "matcher": "Bash|Edit|Write",
+        "matcher": "Bash|PowerShell|Edit|Write",
         "hooks": [
           {
             "type": "command",
