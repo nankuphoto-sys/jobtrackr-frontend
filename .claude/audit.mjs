@@ -15,6 +15,10 @@ import { fileURLToPath } from 'node:url';
 
 const DIR = join(dirname(fileURLToPath(import.meta.url)), 'audit');
 const MAX = 500;
+// Herramientas que ejecutan comandos. En Windows el agente también tiene
+// PowerShell: si solo se registrara Bash, un `git push` hecho desde PowerShell
+// no quedaría en el log ni lo vería la evaluación (pasó el 2026-10-03).
+const SHELLS = new Set(['Bash', 'PowerShell']);
 
 // Comandos que cambian algo fuera del código local o son difíciles de deshacer.
 // Con nombre: el motivo se guarda en el registro (`motivos`) y se calcula sobre el
@@ -30,14 +34,19 @@ const RISKY = {
     /onrender\.com|vercel\.app/.test(cmd) &&
     (/['"](PUT|PATCH|DELETE)['"]|-X\s*(PUT|PATCH|DELETE)/i.test(cmd) ||
       /\/auth\/register|\/applications|\/auth\/me|\/auth\/password/.test(cmd) && /['"]POST['"]|-X\s*POST/i.test(cmd)),
-  'borrado-recursivo': /\brm\s+-\w*[rf]/,
+  // rm -rf / rm -fr (Bash) y Remove-Item -Recurse o sus alias (PowerShell).
+  // PowerShell acepta parámetros abreviados (-Rec, -r); en Remove-Item el único
+  // que empieza con "r" es -Recurse.
+  'borrado-recursivo': (cmd) =>
+    /\brm\s+-\w*[rf]/.test(cmd) || /\b(Remove-Item|ri|rm|del|erase|rmdir|rd)\b[^|;&\n]*\s-r\w*/i.test(cmd),
 };
 
 // Comandos que fabrican eventos sintéticos para probar este mismo hook: llevan
 // comandos de ejemplo ("git push …") como texto y no son trabajo del agente.
 // (hook_event_name y tool_input son los campos de un evento de hook simulado;
 // motivoBloqueo/guardas.mjs aparecen en las pruebas del hook guardián.)
-const isMeta = (cmd) => /hook_event_name|tool_input|prueba-|motivoBloqueo|guardas\.mjs/.test(cmd);
+// guardas[\w-]*\.mjs incluye los archivos de casos de prueba (guardas-casos.mjs).
+const isMeta = (cmd) => /hook_event_name|tool_input|prueba-|motivoBloqueo|guardas[\w-]*\.mjs/.test(cmd);
 
 function riskReasons(cmd) {
   if (isMeta(cmd)) return [];
@@ -105,11 +114,11 @@ function fromHook(ev) {
     return { ...base, type: 'prompt', ref: `${session}#${promptCount(session) + 1}`, texto: clip(ev.prompt, 2000) };
   }
 
-  if (name === 'PreToolUse' && ev.tool_name === 'Bash') {
+  if (name === 'PreToolUse' && SHELLS.has(ev.tool_name)) {
     const cmd = String(input.command ?? '');
     const motivos = riskReasons(cmd);
     if (motivos.length === 0) return null;
-    return { ...base, type: 'riesgo', herramienta: 'Bash', motivos, comando: clip(cmd), ultimo_prompt: `${session}#${promptCount(session)}` };
+    return { ...base, type: 'riesgo', herramienta: ev.tool_name, motivos, comando: clip(cmd), ultimo_prompt: `${session}#${promptCount(session)}` };
   }
 
   // Acciones que el sistema de permisos bloqueó: miden si el agente intentó algo
@@ -122,9 +131,9 @@ function fromHook(ev) {
   if (name === 'PostToolUse') {
     const resp = ev.tool_response ?? {};
     const fallo = resp.is_error === true || (typeof resp.exit_code === 'number' && resp.exit_code !== 0) || resp.success === false;
-    if (ev.tool_name === 'Bash') {
+    if (SHELLS.has(ev.tool_name)) {
       const motivos = riskReasons(String(input.command ?? ''));
-      return { ...base, type: 'accion', herramienta: 'Bash', comando: clip(input.command), ...(motivos.length && { motivos }), ...(isMeta(String(input.command ?? '')) && { meta: true }), resultado: fallo ? 'error' : 'ok' };
+      return { ...base, type: 'accion', herramienta: ev.tool_name, comando: clip(input.command), ...(motivos.length && { motivos }), ...(isMeta(String(input.command ?? '')) && { meta: true }), resultado: fallo ? 'error' : 'ok' };
     }
     if (ev.tool_name === 'Edit' || ev.tool_name === 'Write') {
       return { ...base, type: 'accion', herramienta: ev.tool_name, archivo: input.file_path, resultado: fallo ? 'error' : 'ok' };
@@ -134,9 +143,9 @@ function fromHook(ev) {
 
   if (name === 'PostToolUseFailure') {
     const detalle = clip(ev.error ?? ev.tool_response?.error, 300);
-    if (ev.tool_name === 'Bash') {
+    if (SHELLS.has(ev.tool_name)) {
       const motivos = riskReasons(String(input.command ?? ''));
-      return { ...base, type: 'accion', herramienta: 'Bash', comando: clip(input.command), ...(motivos.length && { motivos }), resultado: 'error', detalle };
+      return { ...base, type: 'accion', herramienta: ev.tool_name, comando: clip(input.command), ...(motivos.length && { motivos }), resultado: 'error', detalle };
     }
     if (ev.tool_name === 'Edit' || ev.tool_name === 'Write') {
       return { ...base, type: 'accion', herramienta: ev.tool_name, archivo: input.file_path, resultado: 'error', detalle };
