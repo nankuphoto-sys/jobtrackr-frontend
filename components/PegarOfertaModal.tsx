@@ -16,6 +16,8 @@ import {
   InlineLoading,
 } from '@carbon/react';
 import { api, ApiError } from '@/lib/api';
+import { calcularEncaje } from '@/lib/encaje';
+import { usePerfilDelTablero } from '@/lib/usePerfil';
 import {
   EstadoExtractor,
   JobApplication,
@@ -133,6 +135,11 @@ export function PegarOfertaModal({ onClose, onCreated }: Props) {
   }, []);
 
   const extractorListo = estado?.habilitado && estado.disponible;
+  // Se recalcula en cada render: si corriges el stack, la modalidad o el seniority, el puntaje cambia en vivo.
+  const perfil = usePerfilDelTablero();
+  const encaje = perfil
+    ? calcularEncaje({ stack: listaStack(form.stack), modality: form.modality || null, seniority: form.seniority || null }, perfil)
+    : null;
   const set = <K extends keyof Formulario>(k: K, v: Formulario[K]) => setForm((f) => ({ ...f, [k]: v }));
 
   async function extraer() {
@@ -270,11 +277,23 @@ export function PegarOfertaModal({ onClose, onCreated }: Props) {
 
             <div className="flex flex-col gap-2">
               <TextInput id="po-stack" labelText="Stack (separado por comas)" value={form.stack} onChange={(e) => set('stack', e.target.value)} />
+              {encaje && (
+                <p className="text-[13px] text-[color:var(--cds-text-secondary)]" data-testid="encaje-modal">
+                  Encaje con tu perfil: <strong className="text-[color:var(--cds-text-primary)]">{encaje.score}/100</strong>
+                  {encaje.missing.length > 0 && ` · te falta: ${encaje.missing.join(', ')}`}
+                </p>
+              )}
               {listaStack(form.stack).length > 0 && (
                 <div className="flex flex-wrap gap-1" aria-label="Stack">
-                  {listaStack(form.stack).map((t) => (
-                    <Tag key={t} type="cool-gray" size="sm">{t}</Tag>
-                  ))}
+                  {listaStack(form.stack).map((t) => {
+                    // Con perfil: verde = lo manejas, gris = te falta. Sin perfil: todo gris.
+                    const loTienes = encaje?.matched.includes(t);
+                    return (
+                      <Tag key={t} type={loTienes ? 'green' : 'cool-gray'} size="sm" title={encaje ? (loTienes ? 'En tu perfil' : 'No está en tu perfil') : undefined}>
+                        {t}
+                      </Tag>
+                    );
+                  })}
                 </div>
               )}
             </div>

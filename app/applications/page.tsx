@@ -27,6 +27,7 @@ import { AppHeader, MAIN_CONTENT_ID } from '@/components/AppHeader';
 import { getToken } from '@/lib/auth';
 import { getDensity } from '@/lib/density';
 import { useStoredValue } from '@/lib/useStoredValue';
+import { PerfilContext, usePerfil } from '@/lib/usePerfil';
 import { APPLICATION_STATUSES, ApplicationStatus, JobApplication, STATUS_LABELS } from '@/lib/types';
 import { computeStats } from '@/lib/stats';
 import { STATUS_ACCENT_COLOR } from '@/lib/statusStyles';
@@ -79,6 +80,8 @@ const columnCoordinateGetter: KeyboardCoordinateGetter = (event, { currentCoordi
 
 export default function ApplicationsPage() {
   const router = useRouter();
+  // Perfil para el puntaje de encaje (null en producción): lo leen las tarjetas y el modal de pegar oferta.
+  const perfil = usePerfil();
   const [applications, setApplications] = useState<JobApplication[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -214,6 +217,7 @@ export default function ApplicationsPage() {
   const hasBoard = !loading && !loadError;
 
   return (
+    <PerfilContext.Provider value={perfil}>
     <div style={{ background: 'var(--cds-background)' }} className="min-h-screen pb-24 pt-12 sm:pb-6">
       {/* Header de Carbon es position:fixed — pt-12 (48px) en el contenedor compensa su altura. */}
       <AppHeader
@@ -334,6 +338,7 @@ export default function ApplicationsPage() {
         />
       )}
     </div>
+    </PerfilContext.Provider>
   );
 }
 

@@ -18,8 +18,10 @@ const OFERTA = {
   summary: 'Rol frontend remoto para LATAM.',
 };
 
-async function simularExtractor(page: Page, estado: object, extraccion?: { status: number; body: object }) {
+async function simularExtractor(page: Page, estado: object, extraccion?: { status: number; body: object }, perfil: object | null = null) {
   await page.route(`${API_URL}/ai/status`, (route) => route.fulfill({ json: estado }));
+  // Simulado también: si no, el resultado dependería del profile.json de cada PC.
+  await page.route(`${API_URL}/ai/perfil`, (route) => route.fulfill({ json: { perfil } }));
   if (extraccion) {
     await page.route(`${API_URL}/ai/extract-job`, (route) => route.fulfill({ status: extraccion.status, json: extraccion.body }));
   }
@@ -51,8 +53,12 @@ test('pegar oferta: extrae, se revisa y edita, y crea la tarjeta en "Por aplicar
   await expect(page.getByLabel('Stack', { exact: true }).getByText('Pinia')).toBeVisible();
   await page.getByLabel('Cargo').fill('Frontend Vue.js (LATAM)');
 
+  // Sin profile.json (producción) no hay puntaje.
+  await expect(page.getByTestId('encaje-modal')).toHaveCount(0);
+
   await page.getByRole('button', { name: 'Crear tarjeta' }).click();
   await expect(page.locator('[data-testid="column-POR_APLICAR"]').getByText('Mapa Verde')).toBeVisible();
+  await expect(page.getByTestId('encaje-badge')).toHaveCount(0);
 
   const apps = await request.get(`${API_URL}/applications`, { headers: { Authorization: `Bearer ${token}` } }).then((r) => r.json());
   expect(apps[0]).toMatchObject({
@@ -104,4 +110,29 @@ test('pegar oferta: avisa qué datos se descartaron por no estar en el texto', a
   await page.getByRole('button', { name: 'Extraer con IA local' }).click();
   await expect(page.getByText(/no aparecen en el texto: empresa/)).toBeVisible();
   await expect(page.getByLabel('Empresa')).toHaveValue('');
+});
+
+test('pegar oferta: con perfil muestra el puntaje de encaje, se recalcula al editar y aparece en la tarjeta', async ({ page, request }) => {
+  const { token } = await registerTestUser(request, 'e2e-pegar-encaje');
+  const perfil = { stack: ['Vue', 'GraphQL', 'TypeScript'], modality: ['remote'], seniority: 'junior' };
+  await simularExtractor(page, { habilitado: true, disponible: true, modelo: 'qwen3:4b' }, {
+    status: 200,
+    body: { oferta: OFERTA, descartados: [], intentos: 1, ms: 3000 },
+  }, perfil);
+  await abrirPegarOferta(page, token);
+
+  await page.getByLabel('Texto de la oferta').fill('Mapa Verde busca Desarrollador/a Frontend Vue.js…');
+  await page.getByRole('button', { name: 'Extraer con IA local' }).click();
+
+  // Stack 2 de 3 (Vue.js = Vue) → 46,7 + remoto 15 + mid vs junior 7,5 = 69.
+  await expect(page.getByTestId('encaje-modal')).toHaveText(/69\/100 · te falta: Pinia/);
+
+  // Corregir el seniority recalcula en vivo: 46,7 + 15 + 15 = 77.
+  await page.getByLabel('Seniority').selectOption('junior');
+  await expect(page.getByTestId('encaje-modal')).toHaveText(/77\/100/);
+
+  await page.getByRole('button', { name: 'Crear tarjeta' }).click();
+  const columna = page.locator('[data-testid="column-POR_APLICAR"]');
+  await expect(columna.getByText('Mapa Verde')).toBeVisible();
+  await expect(columna.getByTestId('encaje-badge')).toHaveText('Encaje 77');
 });

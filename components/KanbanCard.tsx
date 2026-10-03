@@ -6,6 +6,33 @@ import { Link as LinkIcon, TextAlignLeft } from '@carbon/icons-react';
 import { JobApplication } from '@/lib/types';
 import { STATUS_LABELS } from '@/lib/types';
 import { STATUS_SOFT_BG, STATUS_CHIP_TEXT } from '@/lib/statusStyles';
+import { calcularEncaje, nivelEncaje } from '@/lib/encaje';
+import { usePerfilDelTablero } from '@/lib/usePerfil';
+
+// Tokens de Carbon para que el color siga el tema claro/oscuro.
+const COLOR_ENCAJE = {
+  alto: 'var(--cds-support-success)',
+  medio: 'var(--cds-support-warning)',
+  bajo: 'var(--cds-text-secondary)',
+} as const;
+
+/** "Encaje 72" — solo si hay perfil (profile.json local) y la tarjeta tiene datos para comparar. */
+function EncajeBadge({ app }: { app: JobApplication }) {
+  const perfil = usePerfilDelTablero();
+  const encaje = perfil ? calcularEncaje(app, perfil) : null;
+  if (!encaje) return null;
+  const nivel = nivelEncaje(encaje.score);
+  return (
+    <span
+      className="inline-flex items-center gap-1 font-mono text-[11px] text-[color:var(--cds-text-secondary)]"
+      title={`Encaje ${nivel} con tu perfil: ${encaje.matched.length} de ${encaje.matched.length + encaje.missing.length} tecnologías`}
+      data-testid="encaje-badge"
+    >
+      <span aria-hidden className="inline-block h-2 w-2 rounded-full" style={{ background: COLOR_ENCAJE[nivel] }} />
+      Encaje {encaje.score}
+    </span>
+  );
+}
 
 const MONTHS_ES = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
 
@@ -33,12 +60,15 @@ export function CardContent({ app }: { app: JobApplication }) {
       </div>
       <span className="text-[13px] leading-[1.35] text-[color:var(--cds-text-secondary)]">{app.role}</span>
       <div className="flex items-center justify-between gap-2">
-        <span
-          className="rounded-full px-2 py-0.5 text-[11px] font-semibold leading-[1.4]"
-          style={{ background: STATUS_SOFT_BG[app.status], color: STATUS_CHIP_TEXT[app.status] }}
-        >
-          {STATUS_LABELS[app.status]}
-        </span>
+        <div className="flex min-w-0 items-center gap-2">
+          <span
+            className="rounded-full px-2 py-0.5 text-[11px] font-semibold leading-[1.4]"
+            style={{ background: STATUS_SOFT_BG[app.status], color: STATUS_CHIP_TEXT[app.status] }}
+          >
+            {STATUS_LABELS[app.status]}
+          </span>
+          <EncajeBadge app={app} />
+        </div>
         {hasIndicators && (
           <div className="flex items-center gap-2 text-[color:var(--cds-icon-secondary)]">
             {app.link && <LinkIcon size={16} className="jt-icon jt-icon-link" />}
