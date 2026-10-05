@@ -48,6 +48,10 @@ export interface JobApplication {
   stack: string[];
   deadline: string | null;
   summary: string | null;
+  /** Desde cuándo está en su estado actual (lo calcula el backend del historial). */
+  statusChangedAt: string;
+  /** Último "Hice seguimiento"; reinicia el recordatorio sin cambiar el estado. */
+  lastFollowUpAt: string | null;
   createdAt: string;
   updatedAt: string;
   userId: string;

@@ -1,9 +1,11 @@
 import { APPLICATION_STATUSES, JobApplication } from '@/lib/types';
 import { STATUS_ACCENT_COLOR } from '@/lib/statusStyles';
 import { computeStats } from '@/lib/stats';
+import { contarPendientes } from '@/lib/recordatorios';
 
 export function StatsBar({ applications }: { applications: JobApplication[] }) {
   const { total, thisWeek, responseRate } = computeStats(applications);
+  const pendientes = contarPendientes(applications);
 
   return (
     <div
@@ -13,6 +15,8 @@ export function StatsBar({ applications }: { applications: JobApplication[] }) {
       <Metric label="Total" value={total} />
       <Metric label="Esta semana" value={thisWeek} />
       <Metric label="Tasa de respuesta" value={responseRate === null ? '—' : `${responseRate}%`} />
+      {/* Postulaciones con aviso: sin respuesta, sin novedades o fecha límite cerca. */}
+      <Metric label="Pendientes" value={pendientes} />
       <div
         className="col-span-2 flex flex-col gap-[9px] px-[18px] py-[14px]"
         style={{ background: 'var(--cds-layer)' }}

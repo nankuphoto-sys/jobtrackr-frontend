@@ -2,12 +2,40 @@
 
 import { useDraggable } from '@dnd-kit/core';
 import { Tile } from '@carbon/react';
-import { Link as LinkIcon, TextAlignLeft } from '@carbon/icons-react';
+import { Link as LinkIcon, TextAlignLeft, Time } from '@carbon/icons-react';
 import { JobApplication } from '@/lib/types';
 import { STATUS_LABELS } from '@/lib/types';
 import { STATUS_SOFT_BG, STATUS_CHIP_TEXT } from '@/lib/statusStyles';
 import { calcularEncaje, nivelEncaje } from '@/lib/encaje';
+import { calcularRecordatorio, Recordatorio } from '@/lib/recordatorios';
 import { usePerfilDelTablero } from '@/lib/usePerfil';
+
+/**
+ * Fondo del aviso. Texto siempre en --cds-text-primary: el amarillo de Carbon
+ * como color de texto no pasa contraste AA sobre fondo claro. Rojo solo cuando
+ * la fecha límite es hoy o ya pasó.
+ */
+export function fondoRecordatorio(r: Recordatorio): string {
+  return r.tipo === 'cierre' && r.dias <= 0
+    ? 'var(--cds-notification-background-error)'
+    : 'var(--cds-notification-background-warning)';
+}
+
+/** "Sin respuesta · 16 días" — solo si la postulación necesita atención hoy. */
+function RecordatorioBadge({ app }: { app: JobApplication }) {
+  const r = calcularRecordatorio(app);
+  if (!r) return null;
+  return (
+    <span
+      className="inline-flex items-center gap-1 self-start px-1.5 py-0.5 text-[11px] font-medium leading-[1.4] text-[color:var(--cds-text-primary)]"
+      style={{ background: fondoRecordatorio(r) }}
+      data-testid="recordatorio"
+    >
+      <Time size={12} aria-hidden />
+      {r.texto}
+    </span>
+  );
+}
 
 // Tokens de Carbon para que el color siga el tema claro/oscuro.
 const COLOR_ENCAJE = {
@@ -59,6 +87,7 @@ export function CardContent({ app }: { app: JobApplication }) {
         </span>
       </div>
       <span className="text-[13px] leading-[1.35] text-[color:var(--cds-text-secondary)]">{app.role}</span>
+      <RecordatorioBadge app={app} />
       <div className="flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2">
           <span

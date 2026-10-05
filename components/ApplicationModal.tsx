@@ -11,9 +11,12 @@ import {
   TextArea,
   InlineNotification,
 } from '@carbon/react';
+import { Time } from '@carbon/icons-react';
 import { api, ApiError } from '@/lib/api';
 import { APPLICATION_STATUSES, ApplicationStatus, JobApplication, STATUS_LABELS } from '@/lib/types';
 import { STATUS_ACCENT_COLOR, STATUS_SOFT_BG, STATUS_CHIP_TEXT } from '@/lib/statusStyles';
+import { calcularRecordatorio } from '@/lib/recordatorios';
+import { fondoRecordatorio } from './KanbanCard';
 
 function toDateInputValue(iso: string | null): string {
   if (!iso) return '';
@@ -52,6 +55,8 @@ export function ApplicationModal({ app, onClose, onSaved, onDeleted }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  // Se calcula sobre la postulación guardada, no sobre el formulario a medio editar.
+  const recordatorio = app ? calcularRecordatorio(app) : null;
 
   const isDirty =
     company !== (app?.company ?? '') ||
@@ -98,6 +103,27 @@ export function ApplicationModal({ app, onClose, onSaved, onDeleted }: Props) {
     }
   }
 
+  /**
+   * Acciones rápidas del recordatorio. Guardan y cierran el modal como "Guardar",
+   * así que si hay cambios a medio escribir se pide confirmación antes de perderlos.
+   */
+  async function handleQuickAction(accion: 'seguimiento' | 'rechazado') {
+    if (!app) return;
+    if (isDirty && !window.confirm('Tienes cambios sin guardar que se van a perder. ¿Continuar?')) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const saved =
+        accion === 'seguimiento'
+          ? await api.post<JobApplication>(`/applications/${app.id}/follow-up`)
+          : await api.put<JobApplication>(`/applications/${app.id}`, { status: 'RECHAZADO' });
+      onSaved(saved);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'No se pudo conectar con el servidor');
+      setSaving(false);
+    }
+  }
+
   async function handleDelete() {
     if (!app) return;
     if (!window.confirm('¿Borrar esta postulación? Esta acción no se puede deshacer.')) return;
@@ -117,6 +143,36 @@ export function ApplicationModal({ app, onClose, onSaved, onDeleted }: Props) {
       <ModalHeader title={isEdit ? 'Editar postulación' : 'Nueva postulación'} />
       <ModalBody hasForm>
         <div className="flex flex-col gap-5">
+          {recordatorio && (
+            <div
+              className="flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:justify-between"
+              style={{ background: fondoRecordatorio(recordatorio) }}
+              data-testid="recordatorio-modal"
+            >
+              <div className="flex items-start gap-2 text-[color:var(--cds-text-primary)]">
+                <Time size={16} aria-hidden className="mt-0.5 shrink-0" />
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-[14px] font-semibold">{recordatorio.texto}</span>
+                  <span className="text-[12px] text-[color:var(--cds-text-secondary)]">
+                    {recordatorio.tipo === 'cierre'
+                      ? 'La fecha límite de la oferta está cerca o ya pasó.'
+                      : '¿Escribiste para preguntar cómo va? Márcalo y el aviso se reinicia.'}
+                  </span>
+                </div>
+              </div>
+              {recordatorio.tipo !== 'cierre' && (
+                <div className="flex shrink-0 gap-2">
+                  <Button size="sm" kind="tertiary" onClick={() => handleQuickAction('seguimiento')} disabled={saving}>
+                    Hice seguimiento
+                  </Button>
+                  <Button size="sm" kind="ghost" onClick={() => handleQuickAction('rechazado')} disabled={saving}>
+                    Marcar rechazado
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <TextInput id="company" labelText="Empresa" value={company} onChange={(e) => setCompany(e.target.value)} />
             <TextInput id="role" labelText="Cargo" value={role} onChange={(e) => setRole(e.target.value)} />

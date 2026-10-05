@@ -30,6 +30,7 @@ import { useStoredValue } from '@/lib/useStoredValue';
 import { PerfilContext, usePerfil } from '@/lib/usePerfil';
 import { APPLICATION_STATUSES, ApplicationStatus, JobApplication, STATUS_LABELS } from '@/lib/types';
 import { computeStats } from '@/lib/stats';
+import { contarPendientes } from '@/lib/recordatorios';
 import { STATUS_ACCENT_COLOR } from '@/lib/statusStyles';
 import { CardContent } from '@/components/KanbanCard';
 import { KanbanColumn } from '@/components/KanbanColumn';
@@ -167,10 +168,14 @@ export default function ApplicationsPage() {
   async function handleStatusChange(id: string, status: ApplicationStatus) {
     setActionError(null);
     const previous = applications;
-    setApplications((apps) => apps.map((a) => (a.id === id ? { ...a, status } : a)));
+    // statusChangedAt también: si no, al pasar de Aplicado a Entrevista la tarjeta
+    // mostraría "Sin novedades" con los días que llevaba en Aplicado.
+    const ahora = new Date().toISOString();
+    setApplications((apps) => apps.map((a) => (a.id === id ? { ...a, status, statusChangedAt: ahora } : a)));
 
     try {
-      await api.put<JobApplication>(`/applications/${id}`, { status });
+      const saved = await api.put<JobApplication>(`/applications/${id}`, { status });
+      setApplications((apps) => apps.map((a) => (a.id === saved.id ? saved : a)));
     } catch (err) {
       setApplications(previous);
       setActionError(err instanceof ApiError ? err.message : 'No se pudo actualizar el estado');
@@ -241,6 +246,7 @@ export default function ApplicationsPage() {
               <MobileMetric label="Total" value={applications.length} />
               <MobileMetric label="Semana" value={thisWeek} />
               <MobileMetric label="Respuesta" value={responseRate === null ? '—' : `${responseRate}%`} />
+              <MobileMetric label="Pendientes" value={contarPendientes(applications)} />
             </div>
           </>
         )}

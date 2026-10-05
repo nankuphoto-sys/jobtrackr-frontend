@@ -27,9 +27,13 @@ El botón **Pegar oferta** del tablero abre un modal: pegas el texto de una ofer
 
 Solo funciona con el **backend corriendo en tu PC** y Ollama abierto; la instalación está en el [README del backend](https://github.com/nankuphoto-sys/jobtrackr-backend#extractor-de-ofertas-con-ia-local-opcional). En producción el extractor está apagado: el modal lo avisa y deja llenar la tarjeta a mano.
 
+## Recordatorios de seguimiento
+
+El tablero avisa en la tarjeta cuando una postulación lleva tiempo quieta: **"Sin respuesta"** después de 14 días en *Aplicado*, **"Sin novedades"** después de 7 días en *Entrevista* y **"Cierra en N días"** cuando a una oferta en *Por aplicar* le quedan 3 días o menos de fecha límite. El modal de la tarjeta trae dos acciones rápidas: **Hice seguimiento**, que reinicia el aviso sin cambiar el estado, y **Marcar rechazado**. La barra de métricas muestra cuántas están **Pendientes**. Los umbrales están en `UMBRALES`, en `lib/recordatorios.ts`.
+
 ## Tests
 
-- `npm test` — tests unitarios (Vitest) de `lib/api.ts` y `lib/auth.ts`. No requieren nada corriendo.
+- `npm test` — tests unitarios (Vitest) de `lib/` (cliente API, auth, reportes, encaje y recordatorios). No requieren nada corriendo.
 - `npm run test:e2e` — tests end-to-end (Playwright) contra la app real: registro, login, CRUD de postulaciones, expiración de token. **Requiere el backend corriendo** (`jobtrackr-backend`, `npm run dev`, puerto 4000) — si no está disponible, falla con un mensaje claro en vez de errores crípticos. Usa el Chrome instalado en el sistema (`channel: 'chrome'`), no descarga su propio binario.
 
 ## Deploy
@@ -49,3 +53,5 @@ Desplegado en **Vercel** (`vercel deploy --prod`), conectado al repo de GitHub p
 **Fase 5 completada:** deploy real en Vercel (frontend) + Render (backend, free tier), variables de entorno de producción separadas de desarrollo (`JWT_SECRET` propio, `FRONTEND_URL` restringiendo CORS al dominio real en vez de aceptar cualquier origen), flujo completo (registro → tablero → CRUD) verificado contra la app en producción real, no solo en local.
 
 **Pulido post-Fase 5:** tests de integración del backend (ver su README), `@types/react`/`@types/react-dom` alineados con React 19, y monitoreo de errores en producción con **Sentry** — verificado con tráfico de red real, no solo que compile.
+
+**Fase 6 completada:** recordatorios de seguimiento en el tablero (ver arriba), con tests unitarios de las reglas y e2e del flujo completo.
