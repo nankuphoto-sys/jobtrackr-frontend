@@ -21,6 +21,8 @@ function app(id: string, status: JobApplication['status']): JobApplication {
     stack: [],
     deadline: null,
     summary: null,
+    statusChangedAt: '2026-01-01T00:00:00.000Z',
+    lastFollowUpAt: null,
     createdAt: '2026-01-01T00:00:00.000Z',
     updatedAt: '2026-01-01T00:00:00.000Z',
     userId: 'u1',
