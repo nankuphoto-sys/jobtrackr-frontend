@@ -15,7 +15,6 @@ import { Time } from '@carbon/icons-react';
 import { api, ApiError } from '@/lib/api';
 import { APPLICATION_STATUSES, ApplicationStatus, JobApplication, STATUS_LABELS } from '@/lib/types';
 import { STATUS_ACCENT_COLOR, STATUS_SOFT_BG, STATUS_CHIP_TEXT } from '@/lib/statusStyles';
-import { calcularRecordatorio } from '@/lib/recordatorios';
 import { fondoRecordatorio } from './KanbanCard';
 
 function toDateInputValue(iso: string | null): string {
@@ -56,7 +55,7 @@ export function ApplicationModal({ app, onClose, onSaved, onDeleted }: Props) {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   // Se calcula sobre la postulación guardada, no sobre el formulario a medio editar.
-  const recordatorio = app ? calcularRecordatorio(app) : null;
+  const recordatorio = app?.aviso ?? null;
 
   const isDirty =
     company !== (app?.company ?? '') ||

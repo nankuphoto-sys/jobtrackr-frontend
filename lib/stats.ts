@@ -10,6 +10,15 @@ function startOfWeek(): Date {
   return monday;
 }
 
+/**
+ * Cuántas postulaciones tienen un aviso hoy (para la barra de métricas).
+ * Boolean() y no `!== null`: con un backend sin `aviso`, el campo llega
+ * undefined y no debe contar como pendiente.
+ */
+export function contarPendientes(applications: JobApplication[]): number {
+  return applications.filter((a) => Boolean(a.aviso)).length;
+}
+
 export function computeStats(applications: JobApplication[]) {
   const total = applications.length;
   const weekStart = startOfWeek();

@@ -16,6 +16,8 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const headers = new Headers(options.headers);
   headers.set('Content-Type', 'application/json');
   if (token) headers.set('Authorization', `Bearer ${token}`);
+  // El backend calcula los avisos ("Cierra hoy") con el día del usuario, no el del servidor (UTC).
+  headers.set('X-Timezone', Intl.DateTimeFormat().resolvedOptions().timeZone);
 
   const res = await fetch(`${API_URL}${path}`, { ...options, headers });
 

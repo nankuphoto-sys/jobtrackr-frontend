@@ -1,7 +1,6 @@
 import { APPLICATION_STATUSES, JobApplication } from '@/lib/types';
 import { STATUS_ACCENT_COLOR } from '@/lib/statusStyles';
-import { computeStats } from '@/lib/stats';
-import { contarPendientes } from '@/lib/recordatorios';
+import { computeStats, contarPendientes } from '@/lib/stats';
 
 export function StatsBar({ applications }: { applications: JobApplication[] }) {
   const { total, thisWeek, responseRate } = computeStats(applications);

@@ -3,11 +3,10 @@
 import { useDraggable } from '@dnd-kit/core';
 import { Tile } from '@carbon/react';
 import { Link as LinkIcon, TextAlignLeft, Time } from '@carbon/icons-react';
-import { JobApplication } from '@/lib/types';
+import { JobApplication, Recordatorio } from '@/lib/types';
 import { STATUS_LABELS } from '@/lib/types';
 import { STATUS_SOFT_BG, STATUS_CHIP_TEXT } from '@/lib/statusStyles';
 import { calcularEncaje, nivelEncaje } from '@/lib/encaje';
-import { calcularRecordatorio, Recordatorio } from '@/lib/recordatorios';
 import { usePerfilDelTablero } from '@/lib/usePerfil';
 
 /**
@@ -23,7 +22,7 @@ export function fondoRecordatorio(r: Recordatorio): string {
 
 /** "Sin respuesta · 16 días" — solo si la postulación necesita atención hoy. */
 function RecordatorioBadge({ app }: { app: JobApplication }) {
-  const r = calcularRecordatorio(app);
+  const r = app.aviso;
   if (!r) return null;
   return (
     <span
