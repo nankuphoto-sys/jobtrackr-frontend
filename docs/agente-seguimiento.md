@@ -90,8 +90,8 @@ Decidido el 2026-10-05: el reporte es una **vista en la app**, no un envío prog
 
 - El resumen se calcula en el frontend con funciones puras en `lib/reports.ts`, como el resto de la pestaña, con sus tests.
 - **"Semana" son los últimos 7 días**, no la semana de calendario. Así el reporte del lunes no sale casi vacío.
-- **Los seguimientos de la semana no se pueden contar todavía:** `lastFollowUpAt` guarda solo el último. Opciones: mostrar solo "último seguimiento esta semana: sí/no", o crear una tabla de historial de seguimientos con su migración. Decidir al implementar.
-- **Sin IA, el resumen ya cumple casi todo el objetivo.** Conviene implementarlo primero: no tiene costo y funciona en la demo pública.
+- **Seguimientos de la semana (resuelto):** como `lastFollowUpAt` guarda solo el último, el resumen cuenta *postulaciones con seguimiento en la semana* (empresas contactadas), no correos enviados. Es exacto con los datos actuales y no necesita migración. Si algún día hace falta el conteo de correos, habría que agregar una tabla de historial de seguimientos.
+- **El resumen sin IA ya está implementado** (sección "Esta semana" en Reportes, `computeWeeklySummary` en `lib/reports.ts`). Falta la parte con IA.
 
 ## Decisiones abiertas
 
