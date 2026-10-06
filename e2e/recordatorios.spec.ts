@@ -14,23 +14,32 @@ async function seedApplication(
   });
 }
 
+type Aviso = { tipo: 'sin-respuesta' | 'sin-novedades'; dias: number; texto: string };
+
 /**
- * Hace que ciertas postulaciones parezcan llevar `dias` en su estado,
- * reescribiendo statusChangedAt en la respuesta de GET /applications. La API no
- * deja crear postulaciones con fecha pasada, y adelantar el reloj del navegador
- * no sirve acá: las fechas que pone el servidor después (seguimiento, cambio de
- * estado) quedarían 20 días "en el pasado" para el navegador.
+ * Hace que ciertas postulaciones lleguen "viejas" (20 días quietas), reescribiendo
+ * statusChangedAt y el `aviso` en la respuesta de GET /applications. La API no
+ * deja crear postulaciones con fecha pasada, y el aviso lo calcula el backend:
+ * las reglas en sí se prueban allá (src/lib/recordatorios.test.ts). Acá se
+ * prueba que el tablero los muestre y que las acciones los quiten.
  */
-async function envejecer(page: Page, empresas: string[], dias: number) {
+async function envejecer(page: Page, avisos: Record<string, Aviso>) {
   await page.route(`${API_URL}/applications`, async (route) => {
     if (route.request().method() !== 'GET') return route.continue();
     const response = await route.fetch();
-    const apps = (await response.json()) as { company: string; statusChangedAt: string }[];
-    const vieja = new Date(Date.now() - dias * DIA_MS).toISOString();
-    for (const app of apps) if (empresas.includes(app.company)) app.statusChangedAt = vieja;
+    const apps = (await response.json()) as { company: string; statusChangedAt: string; aviso: Aviso | null }[];
+    for (const app of apps) {
+      const aviso = avisos[app.company];
+      if (!aviso) continue;
+      app.statusChangedAt = new Date(Date.now() - aviso.dias * DIA_MS).toISOString();
+      app.aviso = aviso;
+    }
     await route.fulfill({ response, json: apps });
   });
 }
+
+const SIN_RESPUESTA: Aviso = { tipo: 'sin-respuesta', dias: 20, texto: 'Sin respuesta · 20 días' };
+const SIN_NOVEDADES: Aviso = { tipo: 'sin-novedades', dias: 20, texto: 'Sin novedades · 20 días' };
 
 function tarjeta(page: Page, empresa: string) {
   return page.locator('[data-testid^="card-"]', { hasText: empresa });
@@ -49,7 +58,7 @@ test('las postulaciones sin movimiento muestran su aviso y cuentan como pendient
   await seedApplication(request, token, { company: 'Platzi', role: 'Fullstack Jr', status: 'POR_APLICAR', deadline: manana() });
   await seedApplication(request, token, { company: 'Nubank', role: 'Dev', status: 'OFERTA' });
   await seedApplication(request, token, { company: 'Reciente', role: 'Dev', status: 'APLICADO' });
-  await envejecer(page, ['Rappi', 'Globant', 'Nubank'], 20);
+  await envejecer(page, { Rappi: SIN_RESPUESTA, Globant: SIN_NOVEDADES });
 
   await loginAs(page, token);
   await page.goto('/applications');
@@ -57,7 +66,7 @@ test('las postulaciones sin movimiento muestran su aviso y cuentan como pendient
   await expect(tarjeta(page, 'Rappi').getByTestId('recordatorio')).toHaveText('Sin respuesta · 20 días');
   await expect(tarjeta(page, 'Globant').getByTestId('recordatorio')).toHaveText('Sin novedades · 20 días');
   await expect(tarjeta(page, 'Platzi').getByTestId('recordatorio')).toHaveText('Cierra mañana');
-  // Oferta nunca avisa, y una postulación reciente todavía no.
+  // Calculados de verdad por el backend: Oferta no avisa y una postulación reciente todavía no.
   await expect(tarjeta(page, 'Nubank').getByTestId('recordatorio')).toHaveCount(0);
   await expect(tarjeta(page, 'Reciente').getByTestId('recordatorio')).toHaveCount(0);
 
@@ -68,7 +77,7 @@ test('las postulaciones sin movimiento muestran su aviso y cuentan como pendient
 test('"Hice seguimiento" quita el aviso y queda guardado', async ({ page, request }) => {
   const { token } = await registerTestUser(request, 'e2e-recordatorios-seguimiento');
   await seedApplication(request, token, { company: 'Rappi', role: 'Frontend Jr', status: 'APLICADO' });
-  await envejecer(page, ['Rappi'], 20);
+  await envejecer(page, { Rappi: SIN_RESPUESTA });
 
   await loginAs(page, token);
   await page.goto('/applications');
@@ -90,7 +99,7 @@ test('"Hice seguimiento" quita el aviso y queda guardado', async ({ page, reques
 test('al arrastrar una tarjeta vieja a otra columna, el aviso no arrastra los días del estado anterior', async ({ page, request }) => {
   const { token } = await registerTestUser(request, 'e2e-recordatorios-drag');
   await seedApplication(request, token, { company: 'Initech', role: 'QA Engineer', status: 'APLICADO' });
-  await envejecer(page, ['Initech'], 20);
+  await envejecer(page, { Initech: SIN_RESPUESTA });
 
   await loginAs(page, token);
   await page.goto('/applications');

@@ -29,7 +29,7 @@ Solo funciona con el **backend corriendo en tu PC** y Ollama abierto; la instala
 
 ## Recordatorios de seguimiento
 
-El tablero avisa en la tarjeta cuando una postulación lleva tiempo quieta: **"Sin respuesta"** después de 14 días en *Aplicado*, **"Sin novedades"** después de 7 días en *Entrevista* y **"Cierra en N días"** cuando a una oferta en *Por aplicar* le quedan 3 días o menos de fecha límite. El modal de la tarjeta trae dos acciones rápidas: **Hice seguimiento**, que reinicia el aviso sin cambiar el estado, y **Marcar rechazado**. La barra de métricas muestra cuántas están **Pendientes**. Los umbrales están en `UMBRALES`, en `lib/recordatorios.ts`.
+El tablero avisa en la tarjeta cuando una postulación lleva tiempo quieta: **"Sin respuesta"** después de 14 días en *Aplicado*, **"Sin novedades"** después de 7 días en *Entrevista* y **"Cierra en N días"** cuando a una oferta en *Por aplicar* le quedan 3 días o menos de fecha límite. El modal de la tarjeta trae dos acciones rápidas: **Hice seguimiento**, que reinicia el aviso sin cambiar el estado, y **Marcar rechazado**. La barra de métricas muestra cuántas están **Pendientes**. Las reglas y sus umbrales (`UMBRALES`) viven en el backend (`src/lib/recordatorios.ts`): cada postulación llega de la API con su `aviso` ya calculado, usando la zona horaria del navegador (header `X-Timezone`).
 
 ## Tests
 

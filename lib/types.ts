@@ -29,6 +29,15 @@ export const MODALITY_LABELS: Record<Modality, string> = { remote: 'Remoto', hyb
 export const SENIORITY_LABELS: Record<Seniority, string> = { junior: 'Junior', mid: 'Semi-senior', senior: 'Senior' };
 export const SALARY_PERIOD_LABELS: Record<SalaryPeriod, string> = { month: 'al mes', year: 'al año', hour: 'por hora' };
 
+/** Aviso de seguimiento. Las reglas viven en el backend, para que el tablero y la revisión con IA usen las mismas. */
+export interface Recordatorio {
+  tipo: 'cierre' | 'sin-respuesta' | 'sin-novedades';
+  /** Para 'cierre': días que faltan (negativo si ya cerró). Para los demás: días transcurridos. */
+  dias: number;
+  /** Texto corto para la tarjeta. */
+  texto: string;
+}
+
 export interface JobApplication {
   id: string;
   company: string;
@@ -52,6 +61,8 @@ export interface JobApplication {
   statusChangedAt: string;
   /** Último "Hice seguimiento"; reinicia el recordatorio sin cambiar el estado. */
   lastFollowUpAt: string | null;
+  /** Recordatorio de hoy, calculado por el backend (src/lib/recordatorios.ts), o null. */
+  aviso: Recordatorio | null;
   createdAt: string;
   updatedAt: string;
   userId: string;

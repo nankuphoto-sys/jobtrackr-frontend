@@ -29,8 +29,7 @@ import { getDensity } from '@/lib/density';
 import { useStoredValue } from '@/lib/useStoredValue';
 import { PerfilContext, usePerfil } from '@/lib/usePerfil';
 import { APPLICATION_STATUSES, ApplicationStatus, JobApplication, STATUS_LABELS } from '@/lib/types';
-import { computeStats } from '@/lib/stats';
-import { contarPendientes } from '@/lib/recordatorios';
+import { computeStats, contarPendientes } from '@/lib/stats';
 import { STATUS_ACCENT_COLOR } from '@/lib/statusStyles';
 import { CardContent } from '@/components/KanbanCard';
 import { KanbanColumn } from '@/components/KanbanColumn';
@@ -171,7 +170,7 @@ export default function ApplicationsPage() {
     // statusChangedAt también: si no, al pasar de Aplicado a Entrevista la tarjeta
     // mostraría "Sin novedades" con los días que llevaba en Aplicado.
     const ahora = new Date().toISOString();
-    setApplications((apps) => apps.map((a) => (a.id === id ? { ...a, status, statusChangedAt: ahora } : a)));
+    setApplications((apps) => apps.map((a) => (a.id === id ? { ...a, status, statusChangedAt: ahora, aviso: null } : a)));
 
     try {
       const saved = await api.put<JobApplication>(`/applications/${id}`, { status });
