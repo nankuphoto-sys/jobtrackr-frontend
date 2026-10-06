@@ -135,3 +135,87 @@ export function computeAvgTimeInStatus(history: StatusChange[]): AvgTimeInStatus
     return { status, label: STATUS_LABELS[status], avgDays, sampleSize: durations.length };
   });
 }
+
+export interface Movimiento {
+  applicationId: string;
+  company: string;
+  fromStatus: ApplicationStatus;
+  toStatus: ApplicationStatus;
+  changedAt: string;
+}
+
+export interface FechaLimiteProxima {
+  applicationId: string;
+  company: string;
+  /** Días de calendario que faltan (0 = hoy). */
+  dias: number;
+}
+
+export interface WeeklySummary {
+  /** Postulaciones creadas en los últimos 7 días. */
+  nuevas: number;
+  /** Cambios de estado de los últimos 7 días, del más reciente al más viejo (sin contar la creación). */
+  movimientos: Movimiento[];
+  /**
+   * Postulaciones cuyo último seguimiento cae en los últimos 7 días. Solo se
+   * guarda el último seguimiento de cada una, así que esto cuenta empresas
+   * contactadas, no correos enviados.
+   */
+  conSeguimiento: number;
+  /** Postulaciones con aviso hoy (calculado por el backend). */
+  pendientes: JobApplication[];
+  /** "Por aplicar" con fecha límite de hoy a 7 días, de la más cercana a la más lejana. */
+  fechasLimite: FechaLimiteProxima[];
+}
+
+/**
+ * Días de calendario desde hoy (horario local) hasta una fecha sin hora. El
+ * deadline se guarda como medianoche UTC del día elegido: se compara por fecha,
+ * no por instante, para que en UTC-5 no se corra un día.
+ */
+function diasHastaFecha(fecha: string, now: Date): number {
+  const d = new Date(fecha);
+  const limite = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+  const hoy = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+  return Math.round((limite - hoy) / DAY_MS);
+}
+
+/**
+ * Resumen de los últimos 7 días (no la semana de calendario: así el reporte
+ * del lunes no sale casi vacío). Todo sale de datos que ya trae la API; no usa IA.
+ */
+export function computeWeeklySummary(
+  applications: JobApplication[],
+  history: StatusChange[],
+  now: Date = new Date(),
+): WeeklySummary {
+  const desde = now.getTime() - WEEK_MS;
+  const enLaSemana = (iso: string | null) => iso !== null && new Date(iso).getTime() >= desde;
+  const porId = new Map(applications.map((a) => [a.id, a]));
+
+  const movimientos: Movimiento[] = history
+    .filter((c) => c.fromStatus !== null && enLaSemana(c.changedAt) && porId.has(c.applicationId))
+    .map((c) => ({
+      applicationId: c.applicationId,
+      company: porId.get(c.applicationId)!.company,
+      fromStatus: c.fromStatus as ApplicationStatus,
+      toStatus: c.toStatus,
+      changedAt: c.changedAt,
+    }))
+    .sort((a, b) => new Date(b.changedAt).getTime() - new Date(a.changedAt).getTime());
+
+  const fechasLimite: FechaLimiteProxima[] = applications
+    .filter((a) => a.status === 'POR_APLICAR' && a.deadline !== null)
+    .map((a) => ({ applicationId: a.id, company: a.company, dias: diasHastaFecha(a.deadline!, now) }))
+    .filter((f) => f.dias >= 0 && f.dias <= 7)
+    .sort((a, b) => a.dias - b.dias);
+
+  return {
+    nuevas: applications.filter((a) => enLaSemana(a.createdAt)).length,
+    movimientos,
+    conSeguimiento: applications.filter((a) => enLaSemana(a.lastFollowUpAt)).length,
+    // Boolean() por la misma razón que contarPendientes: sin el campo, no es pendiente.
+    pendientes: applications.filter((a) => Boolean(a.aviso)),
+    fechasLimite,
+  };
+}
